@@ -1,0 +1,33 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Dependencies
+**/node_modules/
+**/vendor/
+
+# Build outputs and caches
+**/dist/
+**/.nuxt/
+**/.output/
+**/.vite/
+**/coverage/
+**/.phpunit.cache/
+**/bootstrap/cache/*.php
+
+# Logs and temporary files
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
+
+# IDE / OS
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.suo
+*.user
