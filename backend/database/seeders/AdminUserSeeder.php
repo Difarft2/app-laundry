@@ -10,12 +10,15 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::updateOrCreate(
+        $admin = User::updateOrCreate(
             ['email' => 'admin@admin.com'],
             [
                 'name' => 'Administrator',
                 'password' => Hash::make('admin123'),
             ]
         );
+
+        // Berikan role owner kepada Administrator.
+        $admin->syncRoles(['owner']);
     }
 }
