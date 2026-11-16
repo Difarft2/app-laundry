@@ -1,13 +1,14 @@
 import {
+  BarChartIcon,
   BoxIcon,
-  CalendarIcon,
+  CartIcon,
+  ClockIcon,
+  DollarIcon,
   LayoutGridIcon,
-  ListIcon,
-  PageIcon,
-  PieChartIcon,
-  PluginIcon,
-  TableIcon,
+  TagIcon,
+  TruckDeliveryIcon,
   UserCircleIcon,
+  UsersIcon,
 } from '@/icons/layout'
 import type { NavItem } from './types'
 
@@ -15,65 +16,63 @@ export const navItems: NavItem[] = [
   {
     icon: LayoutGridIcon,
     name: 'Dashboard',
-    subItems: [{ name: 'Ecommerce', path: '/' }],
+    path: '/',
   },
   {
-    icon: CalendarIcon,
-    name: 'Calendar',
-    path: '/calendar',
+    icon: CartIcon,
+    name: 'Pesanan',
+    path: '/orders',
+    disabled: true,
   },
   {
-    icon: UserCircleIcon,
-    name: 'User Profile',
-    path: '/profile',
+    icon: UsersIcon,
+    name: 'Pelanggan',
+    path: '/customers',
+    disabled: true,
   },
   {
-    icon: ListIcon,
-    name: 'Forms',
-    subItems: [{ name: 'Form Elements', path: '/form-elements' }],
+    icon: BoxIcon,
+    name: 'Proses Laundry',
+    path: '/laundry-process',
+    disabled: true,
   },
   {
-    icon: TableIcon,
-    name: 'Tables',
-    subItems: [{ name: 'Basic Tables', path: '/basic-tables' }],
-  },
-  {
-    icon: PageIcon,
-    name: 'Pages',
-    subItems: [
-      { name: 'Blank Page', path: '/blank' },
-      { name: '404 Error', path: '/error-404' },
-    ],
+    icon: TruckDeliveryIcon,
+    name: 'Antar-Jemput',
+    path: '/pickup-delivery',
+    disabled: true,
   },
 ]
 
 export const othersItems: NavItem[] = [
   {
-    icon: PieChartIcon,
-    name: 'Charts',
-    subItems: [
-      { name: 'Line Chart', path: '/line-chart' },
-      { name: 'Bar Chart', path: '/bar-chart' },
-    ],
+    icon: TagIcon,
+    name: 'Layanan',
+    path: '/services',
+    disabled: true,
   },
   {
-    icon: BoxIcon,
-    name: 'UI Elements',
-    subItems: [
-      { name: 'Alerts', path: '/alerts' },
-      { name: 'Avatar', path: '/avatars' },
-      { name: 'Badge', path: '/badge' },
-      { name: 'Buttons', path: '/buttons' },
-      { name: 'Images', path: '/images' },
-      { name: 'Videos', path: '/videos' },
-    ],
+    icon: ClockIcon,
+    name: 'Waktu Layanan',
+    path: '/service-times',
+    disabled: true,
   },
   {
-    icon: PluginIcon,
-    name: 'Authentication',
-    subItems: [
-      { name: 'Sign In', path: '/signin' },
-      { name: 'Sign Up', path: '/signup' },
-    ],
+    icon: DollarIcon,
+    name: 'Pembayaran',
+    path: '/payments',
+    disabled: true,
+  },
+  {
+    icon: UserCircleIcon,
+    name: 'Pengguna',
+    path: '/users',
+    permission: 'users.view',
+  },
+  {
+    icon: BarChartIcon,
+    name: 'Laporan',
+    path: '/reports',
+    disabled: true,
   },
 ]

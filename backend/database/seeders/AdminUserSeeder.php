@@ -10,12 +10,15 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::updateOrCreate(
+        $user = User::updateOrCreate(
             ['email' => 'admin@admin.com'],
             [
                 'name' => 'Administrator',
                 'password' => Hash::make('admin123'),
             ]
         );
+
+        // Akun admin utama harus memiliki role owner agar seluruh permission aktif.
+        $user->syncRoles(['owner']);
     }
 }

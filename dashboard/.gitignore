@@ -1,3 +1,8 @@
+# Local environment (gunakan .env.example sebagai acuan)
+.env
+.env.local
+.env.*.local
+
 # Logs
 logs
 *.log

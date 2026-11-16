@@ -2,8 +2,8 @@
 import { cn } from '@/utils'
 
 withDefaults(defineProps<{ title?: string; description?: string; class?: string }>(), {
-  title: 'Sign In',
-  description: 'Enter your email and password to sign in!',
+  title: 'Masuk ke Pemuda Laundry',
+  description: 'Gunakan email dan password akun Anda untuk mengakses dashboard operasional.',
 })
 </script>
 

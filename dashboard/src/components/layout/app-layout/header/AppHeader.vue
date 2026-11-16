@@ -56,15 +56,30 @@ onBeforeUnmount(() => {
           <MenuTwoIcon v-else class="size-auto! rtl:-scale-x-100" />
         </Button>
 
-        <RouterLink to="/" class="xl:hidden">
-          <img width="154" height="32" class="dark:hidden" src="/images/logo/logo.svg" alt="Logo" />
-          <img
-            width="154"
-            height="32"
-            class="hidden dark:block"
-            src="/images/logo/logo-dark.svg"
-            alt="Logo"
-          />
+        <RouterLink to="/" class="flex items-center gap-2 xl:hidden">
+          <span class="flex size-8 items-center justify-center rounded-lg bg-brand-500 text-white">
+            <svg viewBox="0 0 24 24" fill="none" class="size-5" aria-hidden="true">
+              <rect
+                x="3.75"
+                y="2.75"
+                width="16.5"
+                height="18.5"
+                rx="4"
+                stroke="currentColor"
+                stroke-width="1.6"
+              />
+              <circle cx="12" cy="13.5" r="4.25" stroke="currentColor" stroke-width="1.6" />
+              <path
+                d="M9 13.5c.8.9 1.8 1.35 3 1.35s2.2-.45 3-1.35"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+              />
+              <circle cx="7.5" cy="6.5" r="1" fill="currentColor" />
+              <rect x="14" y="5.5" width="3.5" height="2" rx="0.8" fill="currentColor" />
+            </svg>
+          </span>
+          <span class="text-sm font-bold text-gray-800 dark:text-white">Pemuda Laundry</span>
         </RouterLink>
 
         <Button
@@ -89,7 +104,7 @@ onBeforeUnmount(() => {
                 <InputGroupInput
                   ref="inputRef"
                   type="text"
-                  placeholder="Search or type command..."
+                  placeholder="Cari nota atau pelanggan..."
                   class="text-gray-800 placeholder:text-gray-400 dark:text-white/90 dark:placeholder:text-white/30"
                 />
                 <InputGroupAddon align="inline-end">
