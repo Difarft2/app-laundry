@@ -16,5 +16,8 @@ export interface NavItem {
   path?: string
   new?: boolean
   target?: string
+  disabled?: boolean
+  /** Permission backend yang diperlukan agar menu ditampilkan. */
+  permission?: string
   subItems?: SubItem[]
 }

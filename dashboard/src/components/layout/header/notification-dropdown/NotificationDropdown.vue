@@ -55,7 +55,7 @@ const handleOpenChange = (open: boolean) => {
       class="w-87.5 overflow-hidden p-3 sm:w-90.25 dark:bg-[#1E2635]"
     >
       <div class="flex items-center justify-between pb-3">
-        <h5 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Notification</h5>
+        <h5 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Notifikasi</h5>
         <Button
           variant="ghost"
           size="icon-xs"
@@ -90,7 +90,7 @@ const handleOpenChange = (open: boolean) => {
                   </span>
                 </span>
                 <span class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                  <span>Project</span>
+                  <span>Terkait</span>
                   <DotIcon class="size-2 text-gray-400 dark:text-gray-500" />
                   <span>{{ item.time }}</span>
                 </span>
@@ -108,7 +108,7 @@ const handleOpenChange = (open: boolean) => {
         :class="buttonVariants({ variant: 'outline', size: 'default', class: 'mt-3 w-full' })"
         @click="isOpen = false"
       >
-        View All Notifications
+        Lihat semua notifikasi
       </RouterLink>
     </DropdownMenuContent>
   </DropdownMenu>

@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { pinia } from '@/stores'
+import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -8,6 +10,50 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      name: 'Dashboard',
+      component: () => import('../views/Dashboard/Laundry.vue'),
+      meta: {
+        title: 'Dashboard',
+        permission: 'dashboard.view',
+      },
+    },
+    {
+      path: '/users',
+      name: 'Users',
+      component: () => import('../views/Users/Index.vue'),
+      meta: {
+        title: 'Pengguna',
+        permission: 'users.view',
+      },
+    },
+    {
+      path: '/services',
+      name: 'Services',
+      component: () => import('../views/Services/Index.vue'),
+      meta: {
+        title: 'Layanan',
+        permission: 'services.view',
+      },
+    },
+    {
+      path: '/service-times',
+      name: 'ServiceTimes',
+      component: () => import('../views/ServiceTimes/Index.vue'),
+      meta: {
+        title: 'Waktu Layanan',
+        permission: 'service-times.view',
+      },
+    },
+    {
+      path: '/account',
+      name: 'Account',
+      component: () => import('../views/Account.vue'),
+      meta: {
+        title: 'Akun Saya',
+      },
+    },
+    {
+      path: '/demo/ecommerce',
       name: 'Ecommerce',
       component: () => import('../views/Dashboard/Ecommerce.vue'),
       meta: {
@@ -116,20 +162,12 @@ const router = createRouter({
     },
 
     {
-      path: '/error-404',
-      name: '404 Error',
-      component: () => import('../views/Errors/FourZeroFour.vue'),
-      meta: {
-        title: '404 Error',
-      },
-    },
-
-    {
       path: '/signin',
       name: 'Signin',
       component: () => import('../views/Auth/Signin.vue'),
       meta: {
-        title: 'Signin',
+        title: 'Masuk',
+        public: true,
       },
     },
     {
@@ -137,15 +175,72 @@ const router = createRouter({
       name: 'Signup',
       component: () => import('../views/Auth/Signup.vue'),
       meta: {
-        title: 'Signup',
+        title: 'Daftar',
+        public: true,
+      },
+    },
+    {
+      path: '/forbidden',
+      name: 'Forbidden',
+      component: () => import('../views/Errors/Forbidden.vue'),
+      meta: {
+        title: 'Akses Ditolak',
+      },
+    },
+    {
+      path: '/error-404',
+      name: '404 Error',
+      component: () => import('../views/Errors/FourZeroFour.vue'),
+      meta: {
+        title: '404 Error',
+        public: true,
+      },
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      component: () => import('../views/Errors/FourZeroFour.vue'),
+      meta: {
+        title: '404 Error',
+        public: true,
       },
     },
   ],
 })
 
-export default router
+router.beforeEach(async (to) => {
+  document.title = to.meta.title ? `${to.meta.title} | Pemuda Laundry` : 'Pemuda Laundry'
 
-router.beforeEach((to, from, next) => {
-  document.title = `Vue.js ${to.meta.title} | TailAdmin - Vue.js Tailwind CSS Dashboard Template`
-  next()
+  const auth = useAuthStore(pinia)
+
+  if (to.meta.public) {
+    // Sudah login lalu membuka halaman masuk: alihkan ke dashboard.
+    if (to.name === 'Signin' && auth.token) {
+      await auth.ensureLoaded()
+
+      if (auth.isAuthenticated) {
+        return { name: 'Dashboard' }
+      }
+    }
+
+    return true
+  }
+
+  if (!auth.token) {
+    return { name: 'Signin', query: { redirect: to.fullPath } }
+  }
+
+  await auth.ensureLoaded()
+
+  if (!auth.isAuthenticated) {
+    return { name: 'Signin', query: { redirect: to.fullPath } }
+  }
+
+  if (to.meta.permission && !auth.hasPermission(to.meta.permission)) {
+    return { name: 'Forbidden' }
+  }
+
+  return true
 })
+
+export default router

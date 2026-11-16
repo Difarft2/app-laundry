@@ -1,18 +1,33 @@
 <template>
   <div class="mb-4">
-    <div class="mx-auto rounded-2xl bg-gray-50 px-4 py-5 text-center dark:bg-white/3">
-      <h3 class="mb-2 font-semibold text-gray-900 dark:text-white">#1 Tailwind CSS Dashboard</h3>
-      <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-        Leading Tailwind CSS Admin Template with 400+ UI Component and Pages.
+    <div
+      class="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-800 dark:bg-white/3"
+    >
+      <div class="flex items-center justify-between gap-2">
+        <h3 class="text-xs font-semibold text-gray-800 dark:text-white/90">Status Outlet</h3>
+        <span
+          class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-600 dark:bg-green-500/15 dark:text-green-500"
+        >
+          <span class="size-1.5 rounded-full bg-green-500" />
+          Buka
+        </span>
+      </div>
+
+      <p class="mt-2 text-xs font-medium text-gray-700 dark:text-gray-300">
+        Pemuda Laundry · Outlet Pusat
       </p>
-      <a
-        href="https://tailadmin.com/pricing"
-        target="_blank"
-        rel="nofollow"
-        class="flex items-center justify-center rounded-lg bg-brand-500 p-3 text-sm font-medium text-white hover:bg-brand-600"
-      >
-        Purchase Plan
-      </a>
+      <p class="mt-0.5 text-[11px] text-gray-400 dark:text-gray-500">Senin–Sabtu, 08.00–21.00</p>
+
+      <div class="mt-3 grid grid-cols-2 gap-2 border-t border-gray-200 pt-3 dark:border-gray-800">
+        <div>
+          <p class="text-[10px] text-gray-400 dark:text-gray-500">Antrean</p>
+          <p class="mt-0.5 text-sm font-semibold text-gray-800 dark:text-white/90">32</p>
+        </div>
+        <div>
+          <p class="text-[10px] text-gray-400 dark:text-gray-500">Kurir aktif</p>
+          <p class="mt-0.5 text-sm font-semibold text-gray-800 dark:text-white/90">3</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>

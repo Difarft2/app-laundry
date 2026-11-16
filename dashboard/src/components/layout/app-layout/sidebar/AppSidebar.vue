@@ -7,14 +7,20 @@ import AppSidebarHeader from './SidebarHeader.vue'
 import SidebarNavGroup from './SidebarNavGroup.vue'
 import SidebarWidget from './SidebarWidget.vue'
 import type { MenuType, NavItem } from './types'
+import { useAuthStore } from '@/stores/auth'
 
-const menuSections: { type: MenuType; label: string; items: NavItem[] }[] = [
-  { type: 'main', label: 'Menu', items: navItems },
-  { type: 'others', label: 'Others', items: othersItems },
-]
+const auth = useAuthStore()
+
+const visibleItems = (items: NavItem[]) =>
+  items.filter((item) => !item.permission || auth.hasPermission(item.permission))
+
+const menuSections = computed<{ type: MenuType; label: string; items: NavItem[] }[]>(() => [
+  { type: 'main', label: 'Menu', items: visibleItems(navItems) },
+  { type: 'others', label: 'Lainnya', items: visibleItems(othersItems) },
+])
 
 const findMatchingSubmenu = (path: string) => {
-  for (const section of menuSections) {
+  for (const section of menuSections.value) {
     for (let index = 0; index < section.items.length; index++) {
       const nav = section.items[index]
       if (nav.subItems?.some((subItem) => subItem.path === path)) {

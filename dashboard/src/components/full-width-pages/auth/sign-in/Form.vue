@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -13,28 +13,76 @@ import {
 } from '@/components/ui/input-group'
 import { useFormValidation } from '@/composables/useFormValidation'
 import { EyeCloseIcon, EyeIcon } from '@/icons/layout'
+import { normalizeApiError } from '@/services/http'
+import { useAuthStore } from '@/stores/auth'
 import { validateSignIn, type SignInFormData } from './schema'
 
+const route = useRoute()
+const router = useRouter()
+const auth = useAuthStore()
+
 const showPassword = ref(false)
+const formError = ref<string | null>(null)
 
 const { values, errorOf, touch, handleSubmit, isSubmitting } = useFormValidation<SignInFormData>(
   { email: '', password: '', keepLoggedIn: false },
   validateSignIn,
 )
 
-const onSubmit = handleSubmit(async () => {
-  // handle submit action
+const notice = computed(() => {
+  if (route.query.expired)
+    return 'Sesi Anda berakhir atau token tidak valid. Silakan login kembali.'
+  if (route.query.changed) return 'Password berhasil diperbarui. Silakan login kembali.'
+  return null
+})
+
+const redirectTarget = computed(() => {
+  const redirect = route.query.redirect
+  if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
+    return redirect
+  }
+  return '/'
+})
+
+const onSubmit = handleSubmit(async (data) => {
+  formError.value = null
+
+  try {
+    await auth.login(data.email.trim(), data.password, Boolean(data.keepLoggedIn))
+    await router.replace(redirectTarget.value)
+  } catch (error) {
+    const apiError = normalizeApiError(error)
+    formError.value =
+      apiError.status === 401 ? 'Email atau password tidak valid.' : apiError.message
+  }
 })
 </script>
 
 <template>
   <form class="space-y-5" novalidate @submit="onSubmit">
+    <div
+      v-if="notice"
+      role="status"
+      class="rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700 dark:border-success-500/20 dark:bg-success-500/10 dark:text-success-400"
+    >
+      {{ notice }}
+    </div>
+
+    <div
+      v-if="formError"
+      role="alert"
+      class="rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-400"
+    >
+      {{ formError }}
+    </div>
+
     <Field :data-invalid="Boolean(errorOf('email'))">
       <FieldLabel class="mb-1.5 block"> Email <span class="text-red-500">*</span> </FieldLabel>
       <Input
         v-model="values.email"
         type="email"
-        placeholder="info@gmail.com"
+        autocomplete="username"
+        placeholder="nama@email.com"
         :aria-invalid="errorOf('email') ? 'true' : undefined"
         @blur="touch('email')"
       />
@@ -47,14 +95,15 @@ const onSubmit = handleSubmit(async () => {
         <InputGroupInput
           v-model="values.password"
           :type="showPassword ? 'text' : 'password'"
-          placeholder="Enter your password"
+          autocomplete="current-password"
+          placeholder="Masukkan password"
           :aria-invalid="errorOf('password') ? 'true' : undefined"
           @blur="touch('password')"
         />
         <InputGroupAddon align="inline-end">
           <InputGroupButton
             size="icon-xs"
-            :aria-label="showPassword ? 'Hide password' : 'Show password'"
+            :aria-label="showPassword ? 'Sembunyikan password' : 'Tampilkan password'"
             class="text-gray-500 dark:text-gray-400"
             @click="showPassword = !showPassword"
           >
@@ -77,21 +126,19 @@ const onSubmit = handleSubmit(async () => {
           for="keep-logged-in"
           class="text-theme-sm block cursor-pointer font-normal text-gray-700 dark:text-gray-400"
         >
-          Keep me logged in
+          Ingat saya
         </FieldLabel>
       </Field>
-      <RouterLink
-        to="/reset-password"
-        class="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
-      >
-        Forgot password?
-      </RouterLink>
     </div>
 
     <div>
-      <Button class="w-full" size="lg" type="submit" :disabled="isSubmitting">
-        {{ isSubmitting ? 'Signing In...' : 'Sign In' }}
+      <Button class="w-full" size="lg" type="submit" :disabled="isSubmitting || auth.loggingIn">
+        {{ isSubmitting || auth.loggingIn ? 'Memproses...' : 'Masuk' }}
       </Button>
     </div>
+
+    <p class="text-center text-xs leading-5 text-gray-400 dark:text-gray-500">
+      Gunakan akun yang diberikan Owner/Admin. Hubungi admin bila lupa password.
+    </p>
   </form>
 </template>
