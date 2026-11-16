@@ -9,10 +9,10 @@ export interface SignInFormData {
 export const validateSignIn = (data: SignInFormData) => {
   const errors: Partial<Record<keyof SignInFormData, string>> = {}
 
-  if (!data.email.trim()) errors.email = 'Email is required'
-  else if (!isEmail(data.email.trim())) errors.email = 'Please enter a valid email address'
+  if (!data.email.trim()) errors.email = 'Email wajib diisi.'
+  else if (!isEmail(data.email.trim())) errors.email = 'Format email tidak valid.'
 
-  if (!data.password) errors.password = 'Password is required'
+  if (!data.password) errors.password = 'Password wajib diisi.'
 
   return errors
 }

@@ -81,7 +81,7 @@ const isPanelOpen = computed(() => props.showContent && props.isOpen)
       </CollapsibleContent>
     </Collapsible>
     <RouterLink
-      v-else-if="nav.path"
+      v-else-if="nav.path && !nav.disabled"
       :to="nav.path"
       :target="nav.target"
       :class="cn('group menu-item', isItemActive ? 'menu-item-active' : 'menu-item-inactive')"
@@ -91,5 +91,26 @@ const isPanelOpen = computed(() => props.showContent && props.isOpen)
       </span>
       <span v-if="showContent" class="menu-item-text">{{ nav.name }}</span>
     </RouterLink>
+    <div
+      v-else-if="nav.disabled"
+      :class="
+        cn(
+          'menu-item cursor-not-allowed text-gray-400 dark:text-gray-500',
+          !showContent ? 'lg:justify-center' : 'lg:justify-start',
+        )
+      "
+      :title="`${nav.name} belum tersedia`"
+    >
+      <span class="text-gray-400 dark:text-gray-500">
+        <component :is="nav.icon" class="size-6 stroke-[1.5px]" />
+      </span>
+      <span v-if="showContent" class="menu-item-text">{{ nav.name }}</span>
+      <span
+        v-if="showContent"
+        class="ms-auto rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-gray-400 uppercase dark:bg-white/5 dark:text-gray-500"
+      >
+        Segera
+      </span>
+    </div>
   </UiSidebarMenuItem>
 </template>
