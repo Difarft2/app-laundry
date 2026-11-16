@@ -29,6 +29,12 @@ class RolePermissionSeeder extends Seeder
             'services.update',
             'services.delete',
 
+            // Waktu layanan
+            'service-times.view',
+            'service-times.create',
+            'service-times.update',
+            'service-times.delete',
+
             // Pesanan
             'orders.view',
             'orders.create',
@@ -92,6 +98,11 @@ class RolePermissionSeeder extends Seeder
             'services.update',
             'services.delete',
 
+            'service-times.view',
+            'service-times.create',
+            'service-times.update',
+            'service-times.delete',
+
             'orders.view',
             'orders.create',
             'orders.update',
@@ -120,6 +131,7 @@ class RolePermissionSeeder extends Seeder
         $karyawan->syncPermissions([
             'dashboard.view',
             'services.view',
+            'service-times.view',
 
             'orders.view',
             'orders.create',

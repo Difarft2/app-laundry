@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\ServiceController;
+use App\Http\Controllers\Api\V1\ServiceTimeController;
 
 Route::prefix('v1')->group(function () {
 
@@ -59,6 +60,24 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('permission:services.delete')->group(function () {
             Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
+        });
+
+        // Service Time Management
+        Route::middleware('permission:service-times.view')->group(function () {
+            Route::get('/service-times', [ServiceTimeController::class, 'index']);
+            Route::get('/service-times/{service_time}', [ServiceTimeController::class, 'show']);
+        });
+
+        Route::middleware('permission:service-times.create')->group(function () {
+            Route::post('/service-times', [ServiceTimeController::class, 'store']);
+        });
+
+        Route::middleware('permission:service-times.update')->group(function () {
+            Route::put('/service-times/{service_time}', [ServiceTimeController::class, 'update']);
+        });
+
+        Route::middleware('permission:service-times.delete')->group(function () {
+            Route::delete('/service-times/{service_time}', [ServiceTimeController::class, 'destroy']);
         });
     });
 });

@@ -14,6 +14,7 @@ const router = createRouter({
       component: () => import('../views/Dashboard/Laundry.vue'),
       meta: {
         title: 'Dashboard',
+        permission: 'dashboard.view',
       },
     },
     {
@@ -23,6 +24,24 @@ const router = createRouter({
       meta: {
         title: 'Pengguna',
         permission: 'users.view',
+      },
+    },
+    {
+      path: '/services',
+      name: 'Services',
+      component: () => import('../views/Services/Index.vue'),
+      meta: {
+        title: 'Layanan',
+        permission: 'services.view',
+      },
+    },
+    {
+      path: '/service-times',
+      name: 'ServiceTimes',
+      component: () => import('../views/ServiceTimes/Index.vue'),
+      meta: {
+        title: 'Waktu Layanan',
+        permission: 'service-times.view',
       },
     },
     {
