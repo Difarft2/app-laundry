@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             MetodePembayaranSeeder::class,
             WaktuLayananSeeder::class,
             LayananSeeder::class,
+            AdminUserSeeder::class,
         ]);
     }
 }
