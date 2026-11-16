@@ -1,3 +1,4 @@
+
 <?php
 
 namespace Database\Seeders;
@@ -10,7 +11,7 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        $user = User::updateOrCreate(
+        $admin = User::updateOrCreate(
             ['email' => 'admin@admin.com'],
             [
                 'name' => 'Administrator',
@@ -18,7 +19,7 @@ class AdminUserSeeder extends Seeder
             ]
         );
 
-        // Akun admin utama harus memiliki role owner agar seluruh permission aktif.
-        $user->syncRoles(['owner']);
+        // Berikan role owner kepada Administrator.
+        $admin->syncRoles(['owner']);
     }
 }

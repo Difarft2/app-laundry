@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\V1\ServiceController;
 
 Route::prefix('v1')->group(function () {
 
@@ -40,6 +41,24 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('permission:users.delete')->group(function () {
             Route::delete('/users/{user}', [UserController::class, 'destroy']);
+        });
+
+        // Service Management
+        Route::middleware('permission:services.view')->group(function () {
+            Route::get('/services', [ServiceController::class, 'index']);
+            Route::get('/services/{service}', [ServiceController::class, 'show']);
+        });
+
+        Route::middleware('permission:services.create')->group(function () {
+            Route::post('/services', [ServiceController::class, 'store']);
+        });
+
+        Route::middleware('permission:services.update')->group(function () {
+            Route::put('/services/{service}', [ServiceController::class, 'update']);
+        });
+
+        Route::middleware('permission:services.delete')->group(function () {
+            Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
         });
     });
 });
