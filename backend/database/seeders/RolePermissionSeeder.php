@@ -35,6 +35,12 @@ class RolePermissionSeeder extends Seeder
             'service-times.update',
             'service-times.delete',
 
+            // Metode pembayaran
+            'payment-methods.view',
+            'payment-methods.create',
+            'payment-methods.update',
+            'payment-methods.delete',
+
             // Pesanan
             'orders.view',
             'orders.create',
@@ -103,6 +109,11 @@ class RolePermissionSeeder extends Seeder
             'service-times.update',
             'service-times.delete',
 
+            'payment-methods.view',
+            'payment-methods.create',
+            'payment-methods.update',
+            'payment-methods.delete',
+
             'orders.view',
             'orders.create',
             'orders.update',
@@ -130,8 +141,10 @@ class RolePermissionSeeder extends Seeder
 
         $karyawan->syncPermissions([
             'dashboard.view',
+
             'services.view',
             'service-times.view',
+            'payment-methods.view',
 
             'orders.view',
             'orders.create',
