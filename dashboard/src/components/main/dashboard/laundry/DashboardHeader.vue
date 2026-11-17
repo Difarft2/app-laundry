@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { Badge } from '@/components/ui/badge'
 import { CalendarIcon } from '@/icons/layout'
-import { cn } from '@/utils/cn'
 import { roleMeta } from './status'
 import { formatDateLong } from '@/utils/format'
 import type { DashboardRole } from './types'
@@ -10,17 +9,9 @@ import type { DashboardRole } from './types'
 interface DashboardHeaderProps {
   role: DashboardRole
   name: string
-  /** Switcher role hanya untuk pratinjau owner/admin. */
-  canPreviewRoles?: boolean
 }
 
-const props = withDefaults(defineProps<DashboardHeaderProps>(), {
-  canPreviewRoles: false,
-})
-
-const emit = defineEmits<{ (e: 'update:role', role: DashboardRole): void }>()
-
-const roles: DashboardRole[] = ['owner', 'admin', 'karyawan', 'kurir']
+const props = defineProps<DashboardHeaderProps>()
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
@@ -42,6 +33,7 @@ const today = computed(() => formatDateLong(new Date()))
         <h1 class="text-xl font-semibold text-gray-800 sm:text-2xl dark:text-white/90">
           {{ greeting }}, {{ firstName }}
         </h1>
+        <Badge color="primary" size="sm">{{ roleMeta[role].label }}</Badge>
         <Badge color="warning" size="sm">Mode demo</Badge>
       </div>
 
@@ -59,33 +51,11 @@ const today = computed(() => formatDateLong(new Date()))
       </p>
     </div>
 
-    <div v-if="canPreviewRoles" class="shrink-0">
-      <p class="mb-2 text-xs font-medium text-gray-400 dark:text-gray-500">
-        Pratinjau tampilan role
+    <div class="shrink-0">
+      <p class="text-xs font-medium text-gray-400 dark:text-gray-500">Dashboard {{ roleMeta[role].label }}</p>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Tampilan mengikuti role akun yang sedang login.
       </p>
-      <div
-        class="inline-flex flex-wrap gap-1 rounded-xl border border-gray-200 bg-white p-1 dark:border-gray-800 dark:bg-white/3"
-        role="group"
-        aria-label="Pilih role untuk melihat tampilan dashboard"
-      >
-        <button
-          v-for="item in roles"
-          :key="item"
-          type="button"
-          :aria-pressed="role === item"
-          :class="
-            cn(
-              'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors sm:text-sm',
-              role === item
-                ? 'bg-brand-500 text-white shadow-theme-xs'
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white',
-            )
-          "
-          @click="emit('update:role', item)"
-        >
-          {{ roleMeta[item].label }}
-        </button>
-      </div>
     </div>
   </section>
 </template>

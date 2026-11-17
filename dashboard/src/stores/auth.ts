@@ -15,7 +15,6 @@ export const useAuthStore = defineStore('auth', () => {
   const permissions = computed(() => user.value?.permissions ?? [])
   const role = computed(() => (user.value ? dashboardRoleFromRoles(user.value.roles) : null))
   const roleName = computed(() => (role.value ? roleLabel(role.value) : 'Pengguna'))
-  const canPreviewRoles = computed(() => role.value === 'owner' || role.value === 'admin')
 
   const hasPermission = (permission: string): boolean => permissions.value.includes(permission)
 
@@ -105,7 +104,6 @@ export const useAuthStore = defineStore('auth', () => {
     permissions,
     role,
     roleName,
-    canPreviewRoles,
     hasPermission,
     hasRole,
     login,

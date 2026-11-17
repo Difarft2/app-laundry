@@ -89,6 +89,63 @@ export const ownerMetrics: MetricItem[] = [
   },
 ]
 
+export const adminMetrics: MetricItem[] = [
+  {
+    id: 'new-orders',
+    label: 'Pesanan Baru',
+    value: '18',
+    hint: 'Masuk hari ini',
+    trend: '+6',
+    trendDirection: 'up',
+    tone: 'info',
+    icon: InboxIcon,
+  },
+  {
+    id: 'in-process',
+    label: 'Dalam Proses',
+    value: '26',
+    hint: '8 dicuci · 10 dikeringkan · 8 finishing',
+    tone: 'warning',
+    icon: HourglassIcon,
+  },
+  {
+    id: 'ready',
+    label: 'Siap Diambil',
+    value: '12',
+    hint: '5 pelanggan sudah dihubungi',
+    trend: '+4',
+    trendDirection: 'up',
+    tone: 'success',
+    icon: CheckCircleIcon,
+  },
+  {
+    id: 'unpaid',
+    label: 'Belum Lunas',
+    value: '12',
+    hint: 'Sisa tagihan Rp845.000',
+    trend: '-3',
+    trendDirection: 'down',
+    tone: 'error',
+    icon: BanknoteUndoIcon,
+  },
+  {
+    id: 'pickup-today',
+    label: 'Antar-Jemput Hari Ini',
+    value: '7',
+    hint: '3 jemput · 2 antar · 2 selesai',
+    tone: 'gray',
+    icon: TruckDeliveryIcon,
+  },
+  {
+    id: 'active-services',
+    label: 'Layanan Aktif',
+    value: '12',
+    hint: '3 pilihan waktu layanan',
+    tone: 'brand',
+    icon: ListIcon,
+  },
+]
+
 export const karyawanMetrics: MetricItem[] = [
   {
     id: 'queue',
