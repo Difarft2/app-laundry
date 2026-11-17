@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\ServiceTimeController;
+use App\Http\Controllers\Api\V1\PaymentMethodController;
 
 Route::prefix('v1')->group(function () {
 
@@ -79,5 +80,27 @@ Route::prefix('v1')->group(function () {
         Route::middleware('permission:service-times.delete')->group(function () {
             Route::delete('/service-times/{service_time}', [ServiceTimeController::class, 'destroy']);
         });
+
+
+        Route::prefix('payment-methods')->group(function () {
+            Route::get('/', [PaymentMethodController::class, 'index'])
+                ->middleware('permission:payment-methods.view');
+
+            Route::post('/', [PaymentMethodController::class, 'store'])
+                ->middleware('permission:payment-methods.create');
+
+            Route::get('/{paymentMethod}', [PaymentMethodController::class, 'show'])
+                ->middleware('permission:payment-methods.view');
+
+            Route::put('/{paymentMethod}', [PaymentMethodController::class, 'update'])
+                ->middleware('permission:payment-methods.update');
+
+            Route::patch('/{paymentMethod}/status', [PaymentMethodController::class, 'updateStatus'])
+                ->middleware('permission:payment-methods.update');
+
+            Route::delete('/{paymentMethod}', [PaymentMethodController::class, 'destroy'])
+                ->middleware('permission:payment-methods.delete');
+        });
+
     });
 });
