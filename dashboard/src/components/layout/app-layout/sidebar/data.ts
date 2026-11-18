@@ -63,6 +63,12 @@ export const othersItems: NavItem[] = [
   },
   {
     icon: DollarIcon,
+    name: 'Metode Pembayaran',
+    path: '/payment-methods',
+    permission: 'payment-methods.view',
+  },
+  {
+    icon: DollarIcon,
     name: 'Pembayaran',
     path: '/payments',
     permission: 'payments.view',

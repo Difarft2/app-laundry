@@ -45,6 +45,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/payment-methods',
+      name: 'PaymentMethods',
+      component: () => import('../views/PaymentMethods/Index.vue'),
+      meta: {
+        title: 'Metode Pembayaran',
+        permission: 'payment-methods.view',
+      },
+    },
+    {
       path: '/account',
       name: 'Account',
       component: () => import('../views/Account.vue'),
