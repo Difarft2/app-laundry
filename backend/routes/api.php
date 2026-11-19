@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\ServiceTimeController;
 use App\Http\Controllers\Api\V1\PaymentMethodController;
+use App\Http\Controllers\Api\V1\OrderController;
 
 Route::prefix('v1')->group(function () {
 
@@ -102,5 +103,26 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:payment-methods.delete');
         });
 
+        // Order Management
+        Route::prefix('orders')->group(function () {
+
+            Route::get('/', [OrderController::class, 'index'])
+                ->middleware('permission:orders.view');
+
+            Route::post('/', [OrderController::class, 'store'])
+                ->middleware('permission:orders.create');
+
+            Route::get('/{order}', [OrderController::class, 'show'])
+                ->middleware('permission:orders.view');
+
+            Route::put('/{order}', [OrderController::class, 'update'])
+                ->middleware('permission:orders.update');
+
+            Route::patch('/{order}/status', [OrderController::class, 'updateStatus'])
+                ->middleware('permission:orders.update-status');
+
+            Route::delete('/{order}', [OrderController::class, 'destroy'])
+                ->middleware('permission:orders.delete');
+        });
     });
 });
