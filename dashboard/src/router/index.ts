@@ -18,6 +18,24 @@ const router = createRouter({
       },
     },
     {
+      path: '/orders',
+      name: 'Orders',
+      component: () => import('../views/Orders/Index.vue'),
+      meta: {
+        title: 'Pesanan',
+        permission: 'orders.view',
+      },
+    },
+    {
+      path: '/orders/:id',
+      name: 'OrderDetail',
+      component: () => import('../views/Orders/Show.vue'),
+      meta: {
+        title: 'Detail Pesanan',
+        permission: 'orders.view',
+      },
+    },
+    {
       path: '/users',
       name: 'Users',
       component: () => import('../views/Users/Index.vue'),
