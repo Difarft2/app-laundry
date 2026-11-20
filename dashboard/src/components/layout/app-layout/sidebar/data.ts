@@ -23,7 +23,6 @@ export const navItems: NavItem[] = [
     name: 'Pesanan',
     path: '/orders',
     permission: 'orders.view',
-    disabled: true,
   },
   {
     icon: UsersIcon,
