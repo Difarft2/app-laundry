@@ -6,6 +6,7 @@ import DeleteUserDialog from '@/components/main/users/DeleteUserDialog.vue'
 import ResetPasswordDialog from '@/components/main/users/ResetPasswordDialog.vue'
 import RoleBadges from '@/components/main/users/RoleBadges.vue'
 import UserFormDialog from '@/components/main/users/UserFormDialog.vue'
+import UserStatusDialog from '@/components/main/users/UserStatusDialog.vue'
 import type { UserFormMode } from '@/components/main/users/schema'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -36,6 +37,7 @@ import {
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table'
 import { ROLE_OPTIONS } from '@/constants/roles'
 import {
+  CheckCircleIcon,
   HorizontalDotsIcon,
   KeyIcon,
   LoaderCircleIcon,
@@ -43,6 +45,7 @@ import {
   PlusIcon,
   SearchIcon,
   TrashBinIcon,
+  UserIcon,
   XIcon,
 } from '@/icons/layout'
 import { normalizeApiError } from '@/services/http'
@@ -67,6 +70,7 @@ const page = ref(1)
 const canCreate = computed(() => auth.hasPermission('users.create'))
 const canUpdate = computed(() => auth.hasPermission('users.update'))
 const canDelete = computed(() => auth.hasPermission('users.delete'))
+const canApprove = computed(() => auth.hasPermission('users.approve'))
 const canAssignOwner = computed(() => auth.hasRole('owner'))
 
 const totalPages = computed(() => Math.max(1, meta.value?.last_page ?? 1))
@@ -154,6 +158,7 @@ const editingUser = ref<AuthUser | null>(null)
 
 const resetOpen = ref(false)
 const deleteOpen = ref(false)
+const statusOpen = ref(false)
 const targetUser = ref<AuthUser | null>(null)
 
 const openCreate = () => {
@@ -178,6 +183,29 @@ const openDelete = (user: AuthUser) => {
   deleteOpen.value = true
 }
 
+const openStatus = (user: AuthUser) => {
+  targetUser.value = user
+  statusOpen.value = true
+}
+
+const approving = ref<number | null>(null)
+
+const handleApprove = async (user: AuthUser) => {
+  if (approving.value !== null) return
+
+  approving.value = user.id
+
+  try {
+    const saved = await usersApi.approve(user.id)
+    successMessage.value = `Pengguna ${saved.name} berhasil disetujui.`
+    await load()
+  } catch (error) {
+    loadError.value = normalizeApiError(error).message
+  } finally {
+    approving.value = null
+  }
+}
+
 const handleSaved = async (saved: AuthUser, mode: UserFormMode) => {
   successMessage.value =
     mode === 'create'
@@ -192,6 +220,11 @@ const handleSaved = async (saved: AuthUser, mode: UserFormMode) => {
 }
 
 const handlePasswordReset = async (message: string) => {
+  successMessage.value = message
+  await load()
+}
+
+const handleStatusUpdated = async (message: string) => {
   successMessage.value = message
   await load()
 }
@@ -221,10 +254,14 @@ const formatCreatedAt = (value: string) => {
         >
           <div>
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-              Manajemen pengguna
+              {{ canCreate ? 'Manajemen pengguna' : 'Daftar pengguna' }}
             </h3>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Kelola akun dan role yang menentukan akses ke dashboard.
+              {{
+                canCreate
+                  ? 'Kelola akun dan role yang menentukan akses ke dashboard.'
+                  : 'Lihat daftar akun dan role yang terdaftar di dashboard.'
+              }}
             </p>
           </div>
 
@@ -358,7 +395,9 @@ const formatCreatedAt = (value: string) => {
                       {{
                         search || roleFilter !== 'all'
                           ? 'Ubah kata kunci atau filter role untuk melihat data lain.'
-                          : 'Tambahkan akun karyawan, kurir, atau admin melalui tombol di atas.'
+                          : canCreate
+                            ? 'Tambahkan akun karyawan, kurir, atau admin melalui tombol di atas.'
+                            : 'Belum ada akun pengguna untuk ditampilkan.'
                       }}
                     </p>
                   </TableCell>
@@ -386,6 +425,19 @@ const formatCreatedAt = (value: string) => {
                               {{ user.name }}
                             </p>
                             <Badge v-if="isSelf(user)" color="info" size="sm">Anda</Badge>
+                            <Badge
+                              v-if="user.status === 'pending'"
+                              color="warning"
+                              size="sm"
+                              >Menunggu Persetujuan</Badge
+                            >
+                            <Badge
+                              v-else-if="user.status === 'rejected'"
+                              color="error"
+                              size="sm"
+                              >Ditolak</Badge
+                            >
+                            <Badge v-else color="success" size="sm">Aktif</Badge>
                           </div>
                           <p class="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
                             {{ user.email }}
@@ -405,7 +457,7 @@ const formatCreatedAt = (value: string) => {
                     </TableCell>
 
                     <TableCell class="px-5 py-4 text-end lg:px-6">
-                      <DropdownMenu v-if="canUpdate || canDelete">
+                      <DropdownMenu v-if="canUpdate || canDelete || canApprove">
                         <DropdownMenuTrigger as-child>
                           <Button
                             variant="ghost"
@@ -418,6 +470,23 @@ const formatCreatedAt = (value: string) => {
                         </DropdownMenuTrigger>
 
                         <DropdownMenuContent align="end" class="w-48">
+                          <DropdownMenuItem
+                            v-if="canApprove && user.status === 'pending'"
+                            :disabled="approving === user.id"
+                            @select="handleApprove(user)"
+                          >
+                            <CheckCircleIcon class="size-5" />
+                            {{ approving === user.id ? 'Menyetujui...' : 'Setujui pengguna' }}
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            v-if="canUpdate && !isSelf(user)"
+                            @select="openStatus(user)"
+                          >
+                            <UserIcon class="size-5" />
+                            Ubah status akun
+                          </DropdownMenuItem>
+
                           <DropdownMenuItem v-if="canUpdate" @select="openEdit(user)">
                             <PencilIcon class="size-5" />
                             Edit pengguna
@@ -516,6 +585,12 @@ const formatCreatedAt = (value: string) => {
     />
 
     <ResetPasswordDialog v-model:open="resetOpen" :user="targetUser" @saved="handlePasswordReset" />
+
+    <UserStatusDialog
+      v-model:open="statusOpen"
+      :user="targetUser"
+      @updated="handleStatusUpdated"
+    />
 
     <DeleteUserDialog v-model:open="deleteOpen" :user="targetUser" @deleted="handleDeleted" />
   </AdminLayout>

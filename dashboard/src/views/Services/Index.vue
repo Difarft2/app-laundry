@@ -74,7 +74,8 @@ const page = ref(1)
 const canCreate = computed(() => auth.hasPermission('services.create'))
 const canUpdate = computed(() => auth.hasPermission('services.update'))
 const canDelete = computed(() => auth.hasPermission('services.delete'))
-const canManageTimes = computed(() => auth.hasPermission('service-times.view'))
+const canViewTimes = computed(() => auth.hasPermission('service-times.view'))
+const canManageTimes = computed(() => auth.hasPermission('service-times.create'))
 
 const totalPages = computed(() => Math.max(1, meta.value?.last_page ?? 1))
 
@@ -222,18 +223,22 @@ const hasFilter = computed(
         >
           <div>
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-              Manajemen layanan
+              {{ canCreate ? 'Manajemen layanan' : 'Daftar layanan' }}
             </h3>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Kelola daftar layanan laundry, harga, dan status ketersediaannya.
+              {{
+                canCreate
+                  ? 'Kelola daftar layanan laundry, harga, dan status ketersediaannya.'
+                  : 'Lihat daftar layanan, harga, dan status ketersediaannya.'
+              }}
             </p>
           </div>
 
           <div class="flex flex-wrap items-center gap-3">
-            <Button v-if="canManageTimes" as-child variant="outline" class="shrink-0">
+            <Button v-if="canViewTimes" as-child variant="outline" class="shrink-0">
               <RouterLink to="/service-times">
                 <ClockIcon class="size-5" />
-                Kelola waktu layanan
+                {{ canManageTimes ? 'Kelola waktu layanan' : 'Lihat waktu layanan' }}
               </RouterLink>
             </Button>
 
@@ -390,7 +395,9 @@ const hasFilter = computed(
                       {{
                         hasFilter
                           ? 'Ubah kata kunci atau filter untuk melihat data lain.'
-                          : 'Tambahkan layanan laundry melalui tombol di atas.'
+                          : canCreate
+                            ? 'Tambahkan layanan laundry melalui tombol di atas.'
+                            : 'Belum ada layanan untuk ditampilkan.'
                       }}
                     </p>
                   </TableCell>
@@ -443,7 +450,7 @@ const hasFilter = computed(
                     </TableCell>
 
                     <TableCell class="px-5 py-4 text-end lg:px-6">
-                      <DropdownMenu v-if="canUpdate || canDelete">
+                      <DropdownMenu v-if="canCreate || canUpdate || canDelete">
                         <DropdownMenuTrigger as-child>
                           <Button
                             variant="ghost"

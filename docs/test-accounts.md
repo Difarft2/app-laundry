@@ -31,38 +31,55 @@ role dan permission terbaru.
 | Modul | Owner | Admin | Karyawan | Kurir |
 |---|---|---|---|---|
 | Dashboard | Ya | Ya | Ya | Ya |
-| Pengguna | Ya | Lihat, tambah, ubah | Tidak | Tidak |
-| Layanan | Ya | Ya | Lihat | Tidak |
-| Waktu layanan | Ya | Ya | Lihat | Tidak |
-| Pesanan | Ya | Ya | Ya | Tidak |
-| Pembayaran | Ya | Ya | Ya | Tidak |
-| Proses laundry | Ya | Ya | Ya | Tidak |
-| Antar-jemput | Ya | Ya | Lihat | Ya |
+| Pengguna | Kelola | Lihat | Tidak | Tidak |
+| Layanan | Lihat | Lihat | Kelola | Tidak |
+| Waktu layanan | Lihat | Lihat | Kelola | Tidak |
+| Metode pembayaran | Lihat | Lihat | Kelola | Tidak |
+| Pesanan | Lihat, ubah status, hapus | Lihat | **Buat**, ubah, ubah status | Tidak |
+| Pembayaran | Lihat, catat | Lihat | Lihat, catat | Tidak |
+| Proses laundry | Lihat, ubah | Lihat | Kelola | Tidak |
+| Antar-jemput | Lihat, tugaskan | Lihat | Lihat | **Kelola** |
 | Laporan | Ya | Ya | Tidak | Tidak |
 | Pengaturan dan role | Ya | Tidak | Tidak | Tidak |
 
-Role `admin` sengaja tidak memiliki `users.delete`, `settings.manage`, dan
-`roles.manage`. Role `owner` memiliki seluruh permission.
+Aturan utama:
+
+-   **Hanya karyawan** yang memiliki permission `orders.create` (membuat
+    pesanan).
+-   **Admin bersifat read-only**: seluruh permission yang dimiliki hanya
+    `*.view`, tanpa create/update/delete/status/assign.
+-   **Owner tidak dapat membuat pesanan** dan tidak dapat menambah, mengubah,
+    atau menghapus layanan, waktu layanan, serta metode pembayaran. Owner
+    tetap dapat mengelola akun pengguna, memantau transaksi, dan melihat
+    laporan/histori.
+-   **Kurir hanya memiliki akses antar-jemput** (`delivery.view` dan
+    `delivery.update`), tanpa akses ke pesanan laundry, pembayaran, layanan,
+    pengguna, atau laporan.
+
+Role `admin` sengaja tidak memiliki permission mutasi apa pun. Role `owner`
+tidak lagi memiliki seluruh permission; pembatasan owner diatur eksplisit di
+`RolePermissionSeeder`.
 
 ## 3. Tampilan dashboard per role
 
 | Role | Isi dashboard |
 |---|---|
-| Owner | Ringkasan pendapatan, metode pembayaran, pesanan terbaru, aktivitas, dan antar-jemput menunggu. |
-| Admin | Antrean proses laundry, pesanan terbaru, pembayaran, aktivitas operasional, dan antar-jemput menunggu. |
-| Karyawan | Antrean proses laundry, aktivitas proses, dan pesanan terbaru. |
-| Kurir | Tugas antar-jemput, aktivitas tugas, dan riwayat tugas. |
+| Owner | Pendapatan, pengeluaran, metode pembayaran, pesanan terbaru, histori aktivitas karyawan, histori kurir, dan antar-jemput menunggu. |
+| Admin | Mode pemantauan read-only: pendapatan, pembayaran, pesanan terbaru, riwayat aktivitas, dan riwayat kurir. |
+| Karyawan | Aksi operasional: buat pesanan, antrean proses laundry, aktivitas proses, pesanan terbaru, pembayaran, dan antar-jemput. |
+| Kurir | Tugas antar-jemput, aktivitas tugas, dan riwayat tugas. Tidak ada modul pesanan laundry. |
 
-Dashboard selalu mengikuti role akun yang sedang login. Tidak ada lagi
-pratinjau role, sehingga setiap akun hanya melihat tampilannya sendiri.
+Dashboard selalu mengikuti role akun yang sedang login. Tidak ada pratinjau
+role, sehingga setiap akun hanya melihat tampilannya sendiri.
 
 ## 4. Menu sidebar per role
 
-- **Owner**: semua menu yang tersedia.
-- **Admin**: dashboard, pesanan, pelanggan, proses laundry, antar-jemput,
-  layanan, waktu layanan, pembayaran, pengguna, dan laporan.
-- **Karyawan**: dashboard, pesanan, pelanggan, proses laundry, antar-jemput,
-  layanan, waktu layanan, dan pembayaran.
+- **Owner**: dashboard, riwayat pesanan, layanan, waktu layanan, pengguna, dan
+  laporan.
+- **Admin**: dashboard, riwayat pesanan, layanan, waktu layanan, pengguna, dan
+  laporan (semua read-only).
+- **Karyawan**: dashboard, pesanan, layanan, waktu layanan, pembayaran, proses
+  laundry, dan antar-jemput.
 - **Kurir**: dashboard dan antar-jemput.
 
 Menu yang halamannya belum dibuat tetap tampil sebagai penanda "Segera",

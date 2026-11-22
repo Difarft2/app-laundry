@@ -1,7 +1,6 @@
 export interface OrderFormData {
   namaPelanggan: string
   noHp: string
-  alamat: string
   /** Nilai dari input datetime-local, mis. "2026-11-18T19:00". */
   tanggalMasuk: string
   diskon: string
@@ -27,7 +26,6 @@ export const nowLocalInput = (): string => {
 export const emptyOrderForm = (): OrderFormData => ({
   namaPelanggan: '',
   noHp: '',
-  alamat: '',
   tanggalMasuk: nowLocalInput(),
   diskon: '0',
   catatan: '',
@@ -58,8 +56,9 @@ export const validateOrderForm = (
 
   if (!data.idLayanan.trim()) errors.idLayanan = 'Layanan wajib dipilih.'
 
-  const jumlah = Number(data.jumlah.replace(',', '.'))
-  if (!data.jumlah.trim()) {
+  const jumlahRaw = String(data.jumlah ?? '').trim()
+  const jumlah = Number(jumlahRaw.replace(',', '.'))
+  if (!jumlahRaw) {
     errors.jumlah = isSatuan ? 'Jumlah item wajib diisi.' : 'Berat wajib diisi.'
   } else if (Number.isNaN(jumlah) || jumlah <= 0) {
     errors.jumlah = 'Jumlah harus lebih dari 0.'
@@ -67,8 +66,9 @@ export const validateOrderForm = (
     errors.jumlah = 'Jumlah item harus bilangan bulat.'
   }
 
-  const diskon = Number(data.diskon.replace(',', '.'))
-  if (data.diskon.trim() && (Number.isNaN(diskon) || diskon < 0)) {
+  const diskonRaw = String(data.diskon ?? '').trim()
+  const diskon = Number(diskonRaw.replace(',', '.'))
+  if (diskonRaw && (Number.isNaN(diskon) || diskon < 0)) {
     errors.diskon = 'Diskon tidak boleh kurang dari 0.'
   }
 

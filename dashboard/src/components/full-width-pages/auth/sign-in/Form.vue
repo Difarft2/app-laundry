@@ -138,7 +138,7 @@ const onSubmit = handleSubmit(async (data) => {
     </div>
 
     <p class="text-center text-xs leading-5 text-gray-400 dark:text-gray-500">
-      Gunakan akun yang diberikan Owner/Admin. Hubungi admin bila lupa password.
+      Gunakan akun yang diberikan owner. Hubungi owner bila lupa password.
     </p>
   </form>
 </template>

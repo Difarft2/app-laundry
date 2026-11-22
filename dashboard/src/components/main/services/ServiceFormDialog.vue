@@ -203,7 +203,7 @@ const onSubmit = async (event?: Event) => {
       id_waktu_layanan: hasTime ? Number(idWaktu) : null,
       jenis_layanan: form.jenisLayanan,
       jenis_finishing: form.jenisFinishing,
-      harga: Number(form.harga.replace(',', '.')),
+      harga: Number(String(form.harga).replace(',', '.')),
       deskripsi: deskripsi ? deskripsi : null,
       is_active: form.isActive,
     }
@@ -335,9 +335,7 @@ const onSubmit = async (event?: Event) => {
             <Input
               id="service-price"
               v-model="form.harga"
-              type="number"
-              min="0"
-              step="any"
+              type="text"
               inputmode="decimal"
               placeholder="Contoh: 7000"
               :aria-invalid="errorOf('harga') ? 'true' : undefined"

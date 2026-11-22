@@ -196,10 +196,14 @@ const hasFilter = computed(() => Boolean(search.value) || statusFilter.value !==
         >
           <div>
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-              Manajemen waktu layanan
+              {{ canCreate ? 'Manajemen waktu layanan' : 'Daftar waktu layanan' }}
             </h3>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Kelola estimasi pengerjaan yang dapat dipilih pada layanan.
+              {{
+                canCreate
+                  ? 'Kelola estimasi pengerjaan yang dapat dipilih pada layanan.'
+                  : 'Lihat estimasi pengerjaan yang tersedia pada layanan.'
+              }}
             </p>
           </div>
 
@@ -337,7 +341,9 @@ const hasFilter = computed(() => Boolean(search.value) || statusFilter.value !==
                       {{
                         hasFilter
                           ? 'Ubah kata kunci atau filter untuk melihat data lain.'
-                          : 'Tambahkan estimasi waktu melalui tombol di atas.'
+                          : canCreate
+                            ? 'Tambahkan estimasi waktu melalui tombol di atas.'
+                            : 'Belum ada waktu layanan untuk ditampilkan.'
                       }}
                     </p>
                   </TableCell>
@@ -374,7 +380,7 @@ const hasFilter = computed(() => Boolean(search.value) || statusFilter.value !==
                     </TableCell>
 
                     <TableCell class="px-5 py-4 text-end lg:px-6">
-                      <DropdownMenu v-if="canUpdate || canDelete">
+                      <DropdownMenu v-if="canCreate || canUpdate || canDelete">
                         <DropdownMenuTrigger as-child>
                           <Button
                             variant="ghost"

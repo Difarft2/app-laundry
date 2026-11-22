@@ -82,7 +82,6 @@ const serverFieldKey = (field: keyof OrderFormData): string => {
   const mapping: Record<keyof OrderFormData, string> = {
     namaPelanggan: 'nama_pelanggan',
     noHp: 'no_hp',
-    alamat: 'alamat',
     tanggalMasuk: 'tanggal_masuk',
     diskon: 'diskon',
     catatan: 'catatan',
@@ -105,8 +104,8 @@ const clearServerError = () => {
 const estimatedTotal = computed(() => {
   const service = selectedService.value
   if (!service) return null
-  const jumlah = Number(form.jumlah.replace(',', '.')) || 0
-  const diskon = Number(form.diskon.replace(',', '.')) || 0
+  const jumlah = Number(String(form.jumlah).replace(',', '.')) || 0
+  const diskon = Number(String(form.diskon).replace(',', '.')) || 0
   return Math.max(0, Number(service.harga) * jumlah - diskon)
 })
 
@@ -138,20 +137,18 @@ const onSubmit = async (event?: Event) => {
   try {
     const catatan = form.catatan.trim()
     const catatanDetail = form.catatanDetail.trim()
-    const alamat = form.alamat.trim()
-    const diskon = Number(form.diskon.replace(',', '.')) || 0
+    const diskon = Number(String(form.diskon).replace(',', '.')) || 0
 
     const payload: CreateOrderPayload = {
       nama_pelanggan: form.namaPelanggan.trim(),
       no_hp: form.noHp.trim(),
-      alamat: alamat ? alamat : null,
       tanggal_masuk: toLocalDateTime(form.tanggalMasuk),
       diskon,
       catatan: catatan ? catatan : null,
       detail_pesanan: [
         {
           id_layanan: Number(form.idLayanan),
-          jumlah: Number(form.jumlah.replace(',', '.')),
+          jumlah: Number(String(form.jumlah).replace(',', '.')),
           catatan: catatanDetail ? catatanDetail : null,
         },
       ],
@@ -167,7 +164,6 @@ const onSubmit = async (event?: Event) => {
     const mapping: Record<string, keyof OrderFormData> = {
       nama_pelanggan: 'namaPelanggan',
       no_hp: 'noHp',
-      alamat: 'alamat',
       tanggal_masuk: 'tanggalMasuk',
       diskon: 'diskon',
       catatan: 'catatan',
@@ -246,18 +242,6 @@ const onSubmit = async (event?: Event) => {
               <FieldError :errors="[{ message: errorOf('noHp') }]" />
             </Field>
           </div>
-
-          <Field :data-invalid="Boolean(errorOf('alamat'))" class="gap-1.5">
-            <FieldLabel for="order-address">Alamat</FieldLabel>
-            <Input
-              id="order-address"
-              v-model="form.alamat"
-              placeholder="Opsional"
-              autocomplete="off"
-              @input="clearServerError"
-            />
-            <FieldError :errors="[{ message: errorOf('alamat') }]" />
-          </Field>
         </fieldset>
 
         <fieldset class="space-y-4">
@@ -295,9 +279,7 @@ const onSubmit = async (event?: Event) => {
               <Input
                 id="order-quantity"
                 v-model="form.jumlah"
-                type="number"
-                min="0"
-                :step="isSatuan ? 1 : 'any'"
+                type="text"
                 inputmode="decimal"
                 placeholder="0"
                 :aria-invalid="errorOf('jumlah') ? 'true' : undefined"
@@ -343,9 +325,7 @@ const onSubmit = async (event?: Event) => {
               <Input
                 id="order-discount"
                 v-model="form.diskon"
-                type="number"
-                min="0"
-                step="any"
+                type="text"
                 inputmode="decimal"
                 :aria-invalid="errorOf('diskon') ? 'true' : undefined"
                 @blur="touch('diskon')"

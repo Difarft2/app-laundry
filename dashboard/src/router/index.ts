@@ -63,6 +63,24 @@ const router = createRouter({
       },
     },
     {
+      path: '/payment-methods',
+      name: 'PaymentMethods',
+      component: () => import('../views/PaymentMethods/Index.vue'),
+      meta: {
+        title: 'Metode Pembayaran',
+        permission: 'payment-methods.view',
+      },
+    },
+    {
+      path: '/reports',
+      name: 'Reports',
+      component: () => import('../views/Reports/Index.vue'),
+      meta: {
+        title: 'Laporan & Histori',
+        permission: 'reports.view',
+      },
+    },
+    {
       path: '/account',
       name: 'Account',
       component: () => import('../views/Account.vue'),
