@@ -2,6 +2,16 @@
 import { Badge } from '@/components/ui/badge'
 import { courierHistory } from './data'
 import { courierTypeMeta } from './status'
+
+interface CourierHistoryProps {
+  title?: string
+  subtitle?: string
+}
+
+withDefaults(defineProps<CourierHistoryProps>(), {
+  title: 'Riwayat Tugas',
+  subtitle: 'Tugas antar-jemput yang telah Anda selesaikan.',
+})
 </script>
 
 <template>
@@ -10,10 +20,8 @@ import { courierTypeMeta } from './status'
   >
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Riwayat Tugas</h3>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Tugas antar-jemput yang telah Anda selesaikan.
-        </p>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ title }}</h3>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ subtitle }}</p>
       </div>
       <Badge color="success" size="sm">{{ courierHistory.length }} selesai</Badge>
     </div>

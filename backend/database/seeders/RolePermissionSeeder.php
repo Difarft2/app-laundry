@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionSeeder extends Seeder
@@ -13,80 +13,49 @@ class RolePermissionSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $permissions = [
-            // Dashboard
+        // Create all permissions once.
+        foreach ([
             'dashboard.view',
-
-            // Pengguna
             'users.view',
             'users.create',
             'users.update',
             'users.delete',
-
-            // Layanan
             'services.view',
-            'services.create',
-            'services.update',
-            'services.delete',
-
-            // Waktu layanan
             'service-times.view',
-            'service-times.create',
+            'payment-methods.view',
             'service-times.update',
             'service-times.delete',
-
-            // Metode pembayaran
-            'payment-methods.view',
-            'payment-methods.create',
             'payment-methods.update',
             'payment-methods.delete',
-
-            // Pesanan
             'orders.view',
             'orders.create',
             'orders.update',
-            'orders.delete',
             'orders.update-status',
-
-            // Pembayaran
+            'orders.delete',
             'payments.view',
             'payments.create',
-
-            // Proses laundry
             'laundry.view',
             'laundry.update',
-
-            // Antar jemput
             'delivery.view',
             'delivery.assign',
             'delivery.update',
-
-            // Laporan
             'reports.view',
-
-            // Pengaturan
             'settings.manage',
             'roles.manage',
-        ];
-
-        foreach ($permissions as $permission) {
+            'users.approve',
+            'services.create',
+            'services.update',
+            'services.delete',
+            'service-times.create',
+            'payment-methods.create',
+            'finance.view',
+        ] as $permission) {
             Permission::firstOrCreate([
                 'name' => $permission,
                 'guard_name' => 'web',
             ]);
         }
 
-        $allPermissions = Permission::where('guard_name', 'web')->get();
-
-        // OWNER: Memiliki seluruh akses.
-        $owner = Role::firstOrCreate([
-            'name' => 'owner',
-            'guard_name' => 'web',
-        ]);
-
-        $owner->syncPermissions($allPermissions);
-
-        // ADMIN: Mengelola operasional dan pengguna.
         $admin = Role::firstOrCreate([
             'name' => 'admin',
             'guard_name' => 'web',
@@ -94,46 +63,49 @@ class RolePermissionSeeder extends Seeder
 
         $admin->syncPermissions([
             'dashboard.view',
-
             'users.view',
-            'users.create',
             'users.update',
-
+            'users.approve',
             'services.view',
             'services.create',
             'services.update',
             'services.delete',
-
             'service-times.view',
             'service-times.create',
             'service-times.update',
             'service-times.delete',
-
             'payment-methods.view',
             'payment-methods.create',
             'payment-methods.update',
             'payment-methods.delete',
-
             'orders.view',
-            'orders.create',
-            'orders.update',
-            'orders.delete',
-            'orders.update-status',
-
             'payments.view',
-            'payments.create',
-
             'laundry.view',
-            'laundry.update',
-
             'delivery.view',
-            'delivery.assign',
-            'delivery.update',
-
             'reports.view',
+            'finance.view',
         ]);
 
-        // KARYAWAN: Mengelola pesanan dan proses laundry.
+        $owner = Role::firstOrCreate([
+            'name' => 'owner',
+            'guard_name' => 'web',
+        ]);
+
+        $owner->syncPermissions([
+            'dashboard.view',
+            'users.view',
+            'users.create',
+            'services.view',
+            'service-times.view',
+            'payment-methods.view',
+            'orders.view',
+            'payments.view',
+            'laundry.view',
+            'delivery.view',
+            'reports.view',
+            'finance.view',
+        ]);
+
         $karyawan = Role::firstOrCreate([
             'name' => 'karyawan',
             'guard_name' => 'web',
@@ -141,26 +113,20 @@ class RolePermissionSeeder extends Seeder
 
         $karyawan->syncPermissions([
             'dashboard.view',
-
             'services.view',
             'service-times.view',
             'payment-methods.view',
-
             'orders.view',
             'orders.create',
             'orders.update',
             'orders.update-status',
-
             'payments.view',
-            'payments.create',
-
             'laundry.view',
             'laundry.update',
-
             'delivery.view',
+            'delivery.assign',
         ]);
 
-        // KURIR: Mengakses tugas antar jemput.
         $kurir = Role::firstOrCreate([
             'name' => 'kurir',
             'guard_name' => 'web',
@@ -171,7 +137,5 @@ class RolePermissionSeeder extends Seeder
             'delivery.view',
             'delivery.update',
         ]);
-
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 }

@@ -32,11 +32,11 @@ export const validateServiceForm = (
 ): Partial<Record<keyof ServiceFormData, string>> => {
   const errors: Partial<Record<keyof ServiceFormData, string>> = {}
 
-  const nama = data.namaLayanan.trim()
+  const nama = String(data.namaLayanan ?? '').trim()
   if (!nama) errors.namaLayanan = 'Nama layanan wajib diisi.'
   else if (nama.length > 100) errors.namaLayanan = 'Nama layanan maksimal 100 karakter.'
 
-  const harga = data.harga.trim()
+  const harga = String(data.harga ?? '').trim()
   if (!harga) {
     errors.harga = 'Harga layanan wajib diisi.'
   } else {
@@ -45,8 +45,9 @@ export const validateServiceForm = (
     else if (parsed < 0) errors.harga = 'Harga tidak boleh kurang dari 0.'
   }
 
-  if (data.idWaktuLayanan.trim() && data.idWaktuLayanan !== '__none__') {
-    const id = Number(data.idWaktuLayanan.trim())
+  const idWaktu = String(data.idWaktuLayanan ?? '').trim()
+  if (idWaktu && idWaktu !== '__none__') {
+    const id = Number(idWaktu)
     if (!Number.isInteger(id) || id <= 0) {
       errors.idWaktuLayanan = 'Waktu layanan tidak valid.'
     }

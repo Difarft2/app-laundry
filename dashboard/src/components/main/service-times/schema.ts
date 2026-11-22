@@ -27,13 +27,14 @@ export const validateServiceTimeForm = (
 ): Partial<Record<keyof ServiceTimeFormData, string>> => {
   const errors: Partial<Record<keyof ServiceTimeFormData, string>> = {}
 
-  const nama = data.namaWaktu.trim()
+  const nama = String(data.namaWaktu ?? '').trim()
   if (!nama) errors.namaWaktu = 'Nama waktu layanan wajib diisi.'
   else if (nama.length > 100) errors.namaWaktu = 'Nama waktu layanan maksimal 100 karakter.'
 
   const parseHours = (value: string): number | null => {
-    if (!value.trim()) return null
-    return Number(value.replace(',', '.'))
+    const raw = String(value ?? '')
+    if (!raw.trim()) return null
+    return Number(raw.replace(',', '.'))
   }
 
   const min = parseHours(data.estimasiMinJam)

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import DeleteOrderDialog from '@/components/main/orders/DeleteOrderDialog.vue'
@@ -52,6 +53,7 @@ import type { Order, OrderStatus } from '@/types/order'
 import { formatCurrency } from '@/utils/format'
 
 const auth = useAuthStore()
+const route = useRoute()
 
 const orders = ref<Order[]>([])
 const meta = ref<PaginationMeta | null>(null)
@@ -124,6 +126,11 @@ const goToPage = (next: number) => {
 
 onMounted(() => {
   void load()
+
+  // Pintasan dari dashboard karyawan: langsung buka form pesanan.
+  if (route.query.create === '1' && canCreate.value) {
+    formOpen.value = true
+  }
 })
 
 onBeforeUnmount(() => {
@@ -209,9 +216,15 @@ const remainingLabel = (order: Order): string =>
           class="flex flex-col gap-4 border-b border-gray-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between lg:px-6 dark:border-gray-800"
         >
           <div>
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Manajemen pesanan</h3>
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+              {{ canCreate ? 'Manajemen pesanan' : 'Riwayat pesanan' }}
+            </h3>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Kelola nota pesanan, pantau status, dan sisa pembayaran.
+              {{
+                canCreate
+                  ? 'Buat nota pesanan, pantau status, dan sisa pembayaran.'
+                  : 'Lihat riwayat nota, status, dan sisa pembayaran.'
+              }}
             </p>
           </div>
 
@@ -372,7 +385,9 @@ const remainingLabel = (order: Order): string =>
                       {{
                         hasFilter
                           ? 'Ubah kata kunci atau filter untuk melihat data lain.'
-                          : 'Buat pesanan baru melalui tombol di atas.'
+                          : canCreate
+                            ? 'Buat pesanan baru melalui tombol di atas.'
+                            : 'Belum ada riwayat pesanan untuk ditampilkan.'
                       }}
                     </p>
                   </TableCell>

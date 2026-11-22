@@ -6,6 +6,8 @@ import type {
   PaginatedUsers,
   ResetUserPasswordPayload,
   UpdateUserPayload,
+  UpdateUserStatusResponse,
+  UserStatus,
   UsersQuery,
 } from '@/types/auth'
 
@@ -43,6 +45,16 @@ export const usersApi = {
 
   async remove(id: number): Promise<MessageResponse> {
     const { data } = await http.delete<MessageResponse>(`/users/${id}`)
+    return data
+  },
+
+  async approve(id: number): Promise<AuthUser> {
+    const { data } = await http.patch<{ data: AuthUser }>(`/users/${id}/approve`)
+    return data.data
+  },
+
+  async updateStatus(id: number, status: UserStatus): Promise<UpdateUserStatusResponse> {
+    const { data } = await http.patch<UpdateUserStatusResponse>(`/users/${id}/status`, { status })
     return data
   },
 }

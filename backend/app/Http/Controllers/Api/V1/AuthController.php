@@ -34,6 +34,15 @@ class AuthController extends Controller
             ], 401);
         }
 
+        if ($user->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => $user->status === 'rejected'
+                    ? 'Akun Anda ditolak. Hubungi admin untuk informasi lebih lanjut.'
+                    : 'Akun Anda masih menunggu persetujuan Admin.',
+            ], 403);
+        }
+
         $token = $user->createToken(
             $credentials['device_name'] ?? 'web-dashboard'
         )->plainTextToken;

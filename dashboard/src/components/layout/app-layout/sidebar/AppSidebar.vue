@@ -11,8 +11,14 @@ import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 
+const isReadOnlyRole = computed(() => auth.role === 'owner' || auth.role === 'admin')
+
 const visibleItems = (items: NavItem[]) =>
-  items.filter((item) => !item.permission || auth.hasPermission(item.permission))
+  items
+    .filter((item) => !item.permission || auth.hasPermission(item.permission))
+    .map((item) =>
+      isReadOnlyRole.value && item.readOnlyName ? { ...item, name: item.readOnlyName } : item,
+    )
 
 const menuSections = computed<{ type: MenuType; label: string; items: NavItem[] }[]>(() => [
   { type: 'main', label: 'Menu', items: visibleItems(navItems) },

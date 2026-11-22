@@ -64,8 +64,8 @@ const filteredOrders = computed(() => {
           </option>
         </select>
 
-        <Button variant="outline" size="sm" disabled title="Halaman pesanan belum tersedia">
-          Lihat semua
+        <Button as-child variant="outline" size="sm">
+          <RouterLink to="/orders">Lihat semua</RouterLink>
         </Button>
       </div>
     </div>

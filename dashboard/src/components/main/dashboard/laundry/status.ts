@@ -47,22 +47,22 @@ export const roleMeta: Record<
   owner: {
     label: 'Owner',
     ownerName: 'Budi Santoso',
-    description: 'Ringkasan pendapatan, pesanan, dan operasional outlet.',
+    description: 'Pemantauan bisnis: pendapatan, pengeluaran, histori, dan laporan outlet.',
   },
   admin: {
     label: 'Admin',
     ownerName: 'Siti Rahmawati',
-    description: 'Pantau pesanan, pembayaran, dan tugas antar-jemput.',
+    description: 'Akses baca untuk riwayat pesanan dan seluruh data historis.',
   },
   karyawan: {
     label: 'Karyawan',
     ownerName: 'Dewi Anggraini',
-    description: 'Antrean dan pekerjaan laundry yang perlu diselesaikan.',
+    description: 'Operasional laundry: buat pesanan, proses cuci, dan pembayaran.',
   },
   kurir: {
     label: 'Kurir',
     ownerName: 'Rizky Maulana',
-    description: 'Tugas penjemputan dan pengantaran yang ditugaskan kepada Anda.',
+    description: 'Hanya tugas penjemputan dan pengantaran yang ditugaskan kepada Anda.',
   },
 }
 

@@ -16,25 +16,25 @@ export const ROLE_OPTIONS: RoleOption[] = [
   {
     value: 'owner',
     label: 'Owner',
-    description: 'Akses penuh ke seluruh modul dan laporan.',
+    description: 'Memantau transaksi, laporan, histori, dan mengelola akun pengguna.',
     color: 'primary',
   },
   {
     value: 'admin',
     label: 'Admin',
-    description: 'Mengelola operasional harian dan pengguna.',
+    description: 'Akses baca untuk riwayat pesanan dan seluruh data historis.',
     color: 'info',
   },
   {
     value: 'karyawan',
     label: 'Karyawan',
-    description: 'Mengelola pesanan dan proses laundry.',
+    description: 'Membuat pesanan serta mengelola operasional dan master data laundry.',
     color: 'warning',
   },
   {
     value: 'kurir',
     label: 'Kurir',
-    description: 'Mengakses tugas antar-jemput.',
+    description: 'Hanya mengelola tugas antar-jemput.',
     color: 'success',
   },
 ]

@@ -21,6 +21,7 @@ export const navItems: NavItem[] = [
   {
     icon: CartIcon,
     name: 'Pesanan',
+    readOnlyName: 'Riwayat Pesanan',
     path: '/orders',
     permission: 'orders.view',
   },
@@ -62,6 +63,12 @@ export const othersItems: NavItem[] = [
   },
   {
     icon: DollarIcon,
+    name: 'Metode Pembayaran',
+    path: '/payment-methods',
+    permission: 'payment-methods.view',
+  },
+  {
+    icon: DollarIcon,
     name: 'Pembayaran',
     path: '/payments',
     permission: 'payments.view',
@@ -75,9 +82,8 @@ export const othersItems: NavItem[] = [
   },
   {
     icon: BarChartIcon,
-    name: 'Laporan',
+    name: 'Laporan & Histori',
     path: '/reports',
     permission: 'reports.view',
-    disabled: true,
   },
 ]

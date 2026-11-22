@@ -11,12 +11,15 @@ import {
   MapIcon,
   SparkIcon,
   TruckDeliveryIcon,
+  UsersIcon,
 } from '@/icons/layout'
 import type {
   ActivityItem,
   ActivityStat,
   CourierHistoryItem,
   CourierTask,
+  EmployeeActivityItem,
+  ExpenseItem,
   MetricItem,
   OrderItem,
   PaymentMethodItem,
@@ -42,22 +45,24 @@ export const ownerMetrics: MetricItem[] = [
     icon: ListIcon,
   },
   {
-    id: 'new-orders',
-    label: 'Pesanan Baru',
-    value: '18',
-    hint: 'Masuk hari ini',
-    trend: '+6',
+    id: 'revenue',
+    label: 'Pendapatan Bulan Ini',
+    value: 'Rp46,2 jt',
+    hint: '412 transaksi berhasil',
+    trend: '+8,4%',
     trendDirection: 'up',
-    tone: 'info',
-    icon: InboxIcon,
+    tone: 'success',
+    icon: DollarIcon,
   },
   {
-    id: 'in-process',
-    label: 'Dalam Proses',
-    value: '26',
-    hint: '8 dicuci · 10 dikeringkan · 8 finishing',
-    tone: 'warning',
-    icon: HourglassIcon,
+    id: 'expenses',
+    label: 'Pengeluaran Bulan Ini',
+    value: 'Rp18,4 jt',
+    hint: 'Gaji, operasional, dan perlengkapan',
+    trend: '+2,1%',
+    trendDirection: 'up',
+    tone: 'error',
+    icon: BanknoteUndoIcon,
   },
   {
     id: 'completed',
@@ -66,18 +71,16 @@ export const ownerMetrics: MetricItem[] = [
     hint: '58% dari total pesanan',
     trend: '+9,2%',
     trendDirection: 'up',
-    tone: 'success',
+    tone: 'info',
     icon: CheckCircleIcon,
   },
   {
-    id: 'unpaid',
-    label: 'Pesanan Belum Lunas',
-    value: '12',
-    hint: 'Sisa tagihan Rp845.000',
-    trend: '-3',
-    trendDirection: 'down',
-    tone: 'error',
-    icon: BanknoteUndoIcon,
+    id: 'active-employees',
+    label: 'Akun Aktif',
+    value: '8',
+    hint: 'Owner, admin, karyawan, dan kurir',
+    tone: 'warning',
+    icon: UsersIcon,
   },
   {
     id: 'pending-pickups',
@@ -91,62 +94,66 @@ export const ownerMetrics: MetricItem[] = [
 
 export const adminMetrics: MetricItem[] = [
   {
-    id: 'new-orders',
-    label: 'Pesanan Baru',
-    value: '18',
-    hint: 'Masuk hari ini',
-    trend: '+6',
-    trendDirection: 'up',
-    tone: 'info',
-    icon: InboxIcon,
+    id: 'total-orders',
+    label: 'Total Pesanan Historis',
+    value: '1.284',
+    hint: 'Seluruh data yang tercatat',
+    tone: 'brand',
+    icon: ListIcon,
   },
   {
-    id: 'in-process',
-    label: 'Dalam Proses',
-    value: '26',
-    hint: '8 dicuci · 10 dikeringkan · 8 finishing',
-    tone: 'warning',
-    icon: HourglassIcon,
-  },
-  {
-    id: 'ready',
-    label: 'Siap Diambil',
-    value: '12',
-    hint: '5 pelanggan sudah dihubungi',
-    trend: '+4',
-    trendDirection: 'up',
+    id: 'completed',
+    label: 'Pesanan Selesai',
+    value: '1.102',
+    hint: '85,8% dari total pesanan',
     tone: 'success',
     icon: CheckCircleIcon,
   },
   {
-    id: 'unpaid',
-    label: 'Belum Lunas',
-    value: '12',
-    hint: 'Sisa tagihan Rp845.000',
-    trend: '-3',
-    trendDirection: 'down',
+    id: 'revenue',
+    label: 'Total Pendapatan',
+    value: 'Rp186,4 jt',
+    hint: 'Riwayat transaksi berhasil',
+    tone: 'info',
+    icon: DollarIcon,
+  },
+  {
+    id: 'expenses',
+    label: 'Total Pengeluaran',
+    value: 'Rp72,8 jt',
+    hint: 'Riwayat biaya operasional',
     tone: 'error',
     icon: BanknoteUndoIcon,
   },
   {
-    id: 'pickup-today',
-    label: 'Antar-Jemput Hari Ini',
-    value: '7',
-    hint: '3 jemput · 2 antar · 2 selesai',
-    tone: 'gray',
+    id: 'courier-history',
+    label: 'Tugas Kurir Selesai',
+    value: '312',
+    hint: 'Riwayat antar-jemput',
+    tone: 'warning',
     icon: TruckDeliveryIcon,
   },
   {
-    id: 'active-services',
-    label: 'Layanan Aktif',
-    value: '12',
-    hint: '3 pilihan waktu layanan',
-    tone: 'brand',
-    icon: ListIcon,
+    id: 'active-employees',
+    label: 'Akun Terdaftar',
+    value: '8',
+    hint: 'Owner, admin, karyawan, dan kurir',
+    tone: 'gray',
+    icon: UsersIcon,
   },
 ]
 
 export const karyawanMetrics: MetricItem[] = [
+  {
+    id: 'new-orders',
+    label: 'Pesanan Baru Hari Ini',
+    value: '18',
+    hint: 'Masuk ke antrean operasional',
+    trend: '+6',
+    trendDirection: 'up',
+    tone: 'brand',
+    icon: InboxIcon,
+  },
   {
     id: 'queue',
     label: 'Antrean Mencuci',
@@ -180,6 +187,16 @@ export const karyawanMetrics: MetricItem[] = [
     trendDirection: 'up',
     tone: 'success',
     icon: CheckCircleIcon,
+  },
+  {
+    id: 'unpaid',
+    label: 'Belum Lunas',
+    value: '12',
+    hint: 'Sisa tagihan Rp845.000',
+    trend: '-3',
+    trendDirection: 'down',
+    tone: 'error',
+    icon: BanknoteUndoIcon,
   },
 ]
 
@@ -283,6 +300,48 @@ export const paymentMethods: PaymentMethodItem[] = [
     transactions: 12,
     percentage: 6,
     color: '#F79009',
+  },
+]
+
+/* -------------------------------------------------------------------------- */
+/* Expenses                                                                   */
+/* -------------------------------------------------------------------------- */
+
+export const expenseItems: ExpenseItem[] = [
+  {
+    id: 'salary',
+    label: 'Gaji karyawan',
+    amount: 4_800_000,
+    percentage: 48,
+    color: '#465FFF',
+  },
+  {
+    id: 'rent',
+    label: 'Sewa tempat',
+    amount: 2_000_000,
+    percentage: 20,
+    color: '#7592FF',
+  },
+  {
+    id: 'utilities',
+    label: 'Listrik & air',
+    amount: 1_250_000,
+    percentage: 12.5,
+    color: '#F79009',
+  },
+  {
+    id: 'supplies',
+    label: 'Deterjen & perlengkapan',
+    amount: 1_100_000,
+    percentage: 11,
+    color: '#12B76A',
+  },
+  {
+    id: 'maintenance',
+    label: 'Perawatan & lain-lain',
+    amount: 850_000,
+    percentage: 8.5,
+    color: '#F04438',
   },
 ]
 
@@ -524,6 +583,61 @@ export const ownerActivities: ActivityItem[] = [
   },
 ]
 
+export const employeeActivityStats: ActivityStat[] = [
+  { label: 'Karyawan aktif', value: '6' },
+  { label: 'Pesanan dibuat', value: '18' },
+  { label: 'Proses diselesaikan', value: '12' },
+  { label: 'Rata-rata/proses', value: '2,4 jam' },
+]
+
+export const employeeActivities: EmployeeActivityItem[] = [
+  {
+    id: '1',
+    time: '09.42',
+    employee: 'Dewi Anggraini',
+    employeeRole: 'Karyawan',
+    title: 'Menyelesaikan proses laundry',
+    description: 'PL-20261116-0127 selesai finishing dan siap diambil.',
+    tone: 'success',
+  },
+  {
+    id: '2',
+    time: '09.15',
+    employee: 'Siti Rahmawati',
+    employeeRole: 'Admin',
+    title: 'Memverifikasi pembayaran',
+    description: 'Pembayaran QRIS nota PL-20261115-0124 sebesar Rp42.000.',
+    tone: 'info',
+  },
+  {
+    id: '3',
+    time: '08.55',
+    employee: 'Dewi Anggraini',
+    employeeRole: 'Karyawan',
+    title: 'Membuat pesanan baru',
+    description: 'PL-20261116-0128 · Ibu Sari Wulandari · Cuci Setrika 4,5 kg.',
+    tone: 'brand',
+  },
+  {
+    id: '4',
+    time: '08.30',
+    employee: 'Rizky Maulana',
+    employeeRole: 'Kurir',
+    title: 'Menuju lokasi penjemputan',
+    description: 'AJ-20261116-0042 · Ibu Sari Wulandari · Jl. Melati No. 12.',
+    tone: 'warning',
+  },
+  {
+    id: '5',
+    time: '08.05',
+    employee: 'Budi Santoso',
+    employeeRole: 'Owner',
+    title: 'Meninjau laporan harian',
+    description: 'Pendapatan dan pengeluaran outlet hari ini telah diperiksa.',
+    tone: 'gray',
+  },
+]
+
 export const karyawanActivityStats: ActivityStat[] = [
   { label: 'Masuk antrean', value: '6' },
   { label: 'Selesai dicuci', value: '8' },
@@ -730,6 +844,8 @@ export const orderTotal = (period: RevenuePeriod): number =>
   period.orders.reduce((total, value) => total + value, 0)
 
 export const paymentTotal = paymentMethods.reduce((total, method) => total + method.amount, 0)
+
+export const expenseTotal = expenseItems.reduce((total, item) => total + item.amount, 0)
 
 export const dashboardIcons = {
   dollar: DollarIcon,

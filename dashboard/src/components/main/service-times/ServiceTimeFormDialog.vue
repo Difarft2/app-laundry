@@ -74,8 +74,9 @@ const clearServerError = () => {
 
 const previewEstimasi = computed(() => {
   const parse = (value: string): number | null => {
-    if (!value.trim()) return null
-    const parsed = Number(value.replace(',', '.'))
+    const raw = String(value ?? '')
+    if (!raw.trim()) return null
+    const parsed = Number(raw.replace(',', '.'))
     return Number.isInteger(parsed) ? parsed : null
   }
   return formatEstimasi(parse(form.estimasiMinJam), parse(form.estimasiMaxJam))
@@ -123,8 +124,10 @@ const onSubmit = async (event?: Event) => {
 
   try {
     const deskripsi = form.deskripsi.trim()
-    const min = form.estimasiMinJam.trim() ? Number(form.estimasiMinJam.replace(',', '.')) : null
-    const max = form.estimasiMaxJam.trim() ? Number(form.estimasiMaxJam.replace(',', '.')) : null
+    const minRaw = String(form.estimasiMinJam ?? '').trim()
+    const maxRaw = String(form.estimasiMaxJam ?? '').trim()
+    const min = minRaw ? Number(minRaw.replace(',', '.')) : null
+    const max = maxRaw ? Number(maxRaw.replace(',', '.')) : null
 
     const payload: CreateServiceTimePayload = {
       nama_waktu: form.namaWaktu.trim(),
@@ -206,9 +209,7 @@ const onSubmit = async (event?: Event) => {
             <Input
               id="service-time-min"
               v-model="form.estimasiMinJam"
-              type="number"
-              min="0"
-              step="1"
+              type="text"
               inputmode="numeric"
               placeholder="Contoh: 48"
               :aria-invalid="errorOf('estimasiMinJam') ? 'true' : undefined"
@@ -223,9 +224,7 @@ const onSubmit = async (event?: Event) => {
             <Input
               id="service-time-max"
               v-model="form.estimasiMaxJam"
-              type="number"
-              min="0"
-              step="1"
+              type="text"
               inputmode="numeric"
               placeholder="Contoh: 72"
               :aria-invalid="errorOf('estimasiMaxJam') ? 'true' : undefined"

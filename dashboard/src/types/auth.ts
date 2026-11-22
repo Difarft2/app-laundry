@@ -1,9 +1,12 @@
+export type UserStatus = 'pending' | 'active' | 'rejected'
+
 export interface AuthUser {
   id: number
   name: string
   email: string
   roles: string[]
   permissions: string[]
+  status: UserStatus
   created_at: string
   updated_at: string
 }
@@ -101,4 +104,14 @@ export interface UpdateUserPayload {
 export interface ResetUserPasswordPayload {
   password: string
   password_confirmation: string
+}
+
+export interface UpdateUserStatusPayload {
+  status: UserStatus
+}
+
+export interface UpdateUserStatusResponse {
+  success?: boolean
+  message: string
+  data: AuthUser
 }

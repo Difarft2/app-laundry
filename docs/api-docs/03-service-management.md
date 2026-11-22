@@ -33,6 +33,16 @@ Content-Type: application/json
 | `services.update` | Memperbarui layanan |
 | `services.delete` | Menghapus layanan |
 
+| Role | View | Create | Update | Delete |
+|---|---|---|---|---|
+| Owner | ✓ | - | - | - |
+| Admin | ✓ | - | - | - |
+| Karyawan | ✓ | ✓ | ✓ | ✓ |
+| Kurir | - | - | - | - |
+
+Owner dan admin hanya dapat melihat master layanan. Pengelolaan layanan
+dilakukan oleh karyawan.
+
 ## 3. Daftar Endpoint
 
 | Method | Endpoint | Permission | Keterangan |

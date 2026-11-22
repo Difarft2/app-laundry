@@ -32,10 +32,10 @@ Token diperoleh melalui endpoint login.
 
 | Role | Permission |
 |---|---|
-| Owner | Semua akses Orders |
-| Admin | Semua akses Orders |
-| Karyawan | Melihat, membuat, mengubah, dan mengubah status pesanan |
-| Kurir | Tidak memiliki akses Orders |
+| Owner | Melihat, mengubah, mengubah status, dan menghapus pesanan. **Tidak dapat membuat pesanan.** |
+| Admin | Hanya melihat daftar/detail pesanan (read-only). |
+| Karyawan | Melihat, **membuat**, mengubah, dan mengubah status pesanan. |
+| Kurir | Tidak memiliki akses Orders. |
 
 Daftar permission:
 

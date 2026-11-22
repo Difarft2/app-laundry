@@ -19,5 +19,7 @@ export interface NavItem {
   disabled?: boolean
   /** Permission backend yang diperlukan agar menu ditampilkan. */
   permission?: string
+  /** Label alternatif untuk role yang hanya memiliki akses baca. */
+  readOnlyName?: string
   subItems?: SubItem[]
 }

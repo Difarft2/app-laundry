@@ -46,8 +46,9 @@ const isCreate = computed(() => props.mode === 'create')
 const targetIsOwner = computed(() => props.user?.roles.includes('owner') ?? false)
 
 /**
- * Owner hanya boleh diubah role-nya oleh owner. Untuk admin biasa, bagian
- * role dinonaktifkan dan `roles` tidak dikirim agar role owner tidak hilang.
+ * Owner hanya boleh diubah role-nya oleh owner. Untuk pengguna tanpa role
+ * owner, bagian role dinonaktifkan dan `roles` tidak dikirim agar role owner
+ * tidak hilang.
  */
 const canEditRoles = computed(() => props.canAssignOwner || !targetIsOwner.value)
 

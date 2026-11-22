@@ -23,6 +23,13 @@ const greeting = computed(() => {
 
 const firstName = computed(() => props.name.trim().split(/\s+/)[0] || 'Pengguna')
 
+const accessLabel = computed(() => {
+  if (props.role === 'owner') return 'Pemantauan bisnis'
+  if (props.role === 'admin') return 'Akses baca'
+  if (props.role === 'kurir') return 'Antar-jemput'
+  return 'Operasional'
+})
+
 const today = computed(() => formatDateLong(new Date()))
 </script>
 
@@ -34,7 +41,9 @@ const today = computed(() => formatDateLong(new Date()))
           {{ greeting }}, {{ firstName }}
         </h1>
         <Badge color="primary" size="sm">{{ roleMeta[role].label }}</Badge>
-        <Badge color="warning" size="sm">Mode demo</Badge>
+        <Badge :color="role === 'admin' ? 'gray' : 'warning'" size="sm">
+          {{ accessLabel }}
+        </Badge>
       </div>
 
       <p class="mt-1.5 max-w-2xl text-sm text-gray-500 dark:text-gray-400">

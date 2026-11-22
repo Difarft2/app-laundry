@@ -3,7 +3,6 @@ import type { ApiFieldErrors } from '@/services/http'
 const fieldLabels: Record<string, string> = {
   nama_pelanggan: 'Nama pelanggan',
   no_hp: 'Nomor HP',
-  alamat: 'Alamat',
   tanggal_masuk: 'Tanggal masuk',
   diskon: 'Diskon',
   catatan: 'Catatan',

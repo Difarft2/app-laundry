@@ -40,9 +40,9 @@ Jika token tidak valid atau tidak disertakan, API mengembalikan:
 
 | Role | View | Create | Update | Delete |
 |---|---|---|---|---|
-| Owner | ✓ | ✓ | ✓ | ✓ |
-| Admin | ✓ | ✓ | ✓ | ✓ |
-| Karyawan | ✓ | - | - | - |
+| Owner | ✓ | - | - | - |
+| Admin | ✓ | - | - | - |
+| Karyawan | ✓ | ✓ | ✓ | ✓ |
 | Kurir | - | - | - | - |
 
 Permission yang digunakan:

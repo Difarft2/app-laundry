@@ -15,6 +15,7 @@ use Spatie\Permission\Traits\HasRoles;
     'email',
     'no_hp',
     'password',
+    'status',
 ])]
 #[Hidden([
     'password',

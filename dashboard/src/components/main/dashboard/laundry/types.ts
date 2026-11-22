@@ -66,6 +66,14 @@ export interface PaymentMethodItem {
   color: string
 }
 
+export interface ExpenseItem {
+  id: string
+  label: string
+  amount: number
+  percentage: number
+  color: string
+}
+
 export interface QueueSummaryItem {
   label: string
   count: number
@@ -95,6 +103,11 @@ export interface ActivityItem {
   title: string
   description: string
   tone: ActivityTone
+}
+
+export interface EmployeeActivityItem extends ActivityItem {
+  employee: string
+  employeeRole: string
 }
 
 export interface CourierTask {

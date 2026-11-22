@@ -1,12 +1,20 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { useAuthStore } from '@/stores/auth'
 import { cn } from '@/utils/cn'
 import AppHeader from './app-layout/header/AppHeader.vue'
 import AppSidebar from './app-layout/sidebar/AppSidebar.vue'
 
 const route = useRoute()
+const auth = useAuthStore()
+
+// Segarkan permission setiap halaman dibuka agar perubahan role/permission
+// dari backend langsung terpakai tanpa harus logout.
+onMounted(() => {
+  void auth.refreshUser().catch(() => {})
+})
 
 const isAiRoute = computed(
   () => route.path.startsWith('/ai-chat') || route.path.startsWith('/ai-settings'),

@@ -39,11 +39,16 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('permission:users.update')->group(function () {
             Route::put('/users/{user}', [UserController::class, 'update']);
+            Route::patch('/users/{user}/status', [UserController::class, 'updateStatus']);
             Route::put('/users/{user}/reset-password', [UserController::class, 'resetPassword']);
         });
 
         Route::middleware('permission:users.delete')->group(function () {
             Route::delete('/users/{user}', [UserController::class, 'destroy']);
+        });
+
+        Route::middleware('permission:users.approve')->group(function () {
+            Route::patch('/users/{user}/approve', [UserController::class, 'approve']);
         });
 
         // Service Management
