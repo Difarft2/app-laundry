@@ -29,6 +29,20 @@ export const ordersApi = {
     return data.data
   },
 
+  async lookupByCode(kodePesanan: string): Promise<Order> {
+    const { data } = await http.get<OrderResponse>('/orders/lookup', {
+      params: { kode_pesanan: kodePesanan },
+    })
+    return data.data
+  },
+
+  async receipt(id: number): Promise<Blob> {
+    const { data } = await http.get<Blob>(`/orders/${id}/receipt`, {
+      responseType: 'blob',
+    })
+    return data
+  },
+
   async create(payload: CreateOrderPayload): Promise<Order> {
     const { data } = await http.post<OrderResponse>('/orders', payload)
     return data.data

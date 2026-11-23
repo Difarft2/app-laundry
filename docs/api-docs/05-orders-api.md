@@ -57,7 +57,9 @@ Daftar permission:
 |---|---|---|---|
 | GET | `/orders` | Daftar pesanan | `orders.view` |
 | POST | `/orders` | Membuat pesanan | `orders.create` |
+| GET | `/orders/lookup?kode_pesanan=` | Cari pesanan dari QR / kode pesanan | `orders.view` |
 | GET | `/orders/{order}` | Detail pesanan | `orders.view` |
+| GET | `/orders/{order}/receipt` | Cetak struk pesanan (PNG + QR) | `orders.view` |
 | PUT | `/orders/{order}` | Mengubah pesanan | `orders.update` |
 | PATCH | `/orders/{order}/status` | Mengubah status pesanan | `orders.update-status` |
 | DELETE | `/orders/{order}` | Menghapus pesanan | `orders.delete` |
@@ -448,14 +450,24 @@ PATCH /orders/{order}/status
 
 Status yang diperbolehkan:
 
-- `menunggu`
+- `menunggu` (Menunggu giliran)
+- `dicuci` (Di cuci)
+- `dikeringkan` (Di keringkan)
+- `dilipat` (Di lipat)
+- `disetrika` (Di setrika)
 - `diproses`
 - `siap_diambil`
 - `dalam_pengantaran`
 - `selesai`
 - `dibatalkan`
 
-Setiap perubahan status akan dicatat ke tabel riwayat status pesanan.
+Alur tahapan laundry yang dipakai pada fitur scan QR:
+`menunggu` → `dicuci` → `dikeringkan` → `dilipat` → `disetrika` → `selesai`.
+
+Setiap perubahan status akan dicatat ke tabel `riwayat_status_pesanan` dengan
+`status_sebelumnya`, `status_selanjutnya`, user yang melakukan perubahan,
+waktu, dan keterangan. Riwayat ini tersedia pada `riwayat_status` di response
+detail pesanan.
 
 Jika status baru adalah `selesai`, sistem juga mengisi `tanggal_selesai`.
 
@@ -510,17 +522,16 @@ Jika memenuhi ketentuan, pesanan dapat dihapus beserta detail dan data proses te
 
 ### Status Proses Laundry
 
-Status proses laundry dikelola melalui API Proses Laundry, bukan melalui endpoint perubahan status pesanan.
+Terdapat dua level status yang berbeda:
 
-| Status | Keterangan |
-|---|---|
-| `menunggu` | Menunggu pengerjaan |
-| `pencucian` | Sedang dicuci |
-| `pengeringan` | Sedang dikeringkan |
-| `finishing` | Tahap finishing |
-| `selesai` | Proses laundry selesai |
+1. **`status_pesanan`** — status keseluruhan pesanan. Kini mencakup tahapan
+   laundry (`menunggu`, `dicuci`, `dikeringkan`, `dilipat`, `disetrika`,
+   `selesai`) dan diubah karyawan lewat scan QR pada dashboard.
+2. **`status_proses`** — status per detail layanan di tabel `proses_laundry`
+   (`menunggu`, `pencucian`, `pengeringan`, `finishing`, `selesai`).
 
-Status pesanan dan status proses laundry merupakan dua hal yang berbeda.
+Keduanya bukan sumber kebenaran yang sama. Perubahan `status_pesanan` melalui
+`PATCH /orders/{order}/status` tidak mengubah `status_proses` tiap detail.
 
 ---
 
@@ -589,6 +600,65 @@ Frontend harus memperhatikan hal-hal berikut:
 8. Tampilkan `estimasi_selesai` dari backend; jangan menghitung sendiri dari durasi layanan.
 9. Gunakan `sisa_pembayaran` dari backend untuk memutuskan apakah tombol **Catat pembayaran** perlu ditampilkan.
 10. Gunakan `pembayaran` dari detail pesanan sebagai sumber riwayat pembayaran; endpoint pembayaran dijelaskan pada dokumen **Payments API**.
+11. Tombol **Cetak struk** tersedia di dialog sukses create, menu aksi baris
+    daftar pesanan, dan halaman detail pesanan. Ketiganya memakai endpoint
+    `GET /orders/{order}/receipt`.
+12. Untuk scan QR, gunakan `GET /orders/lookup`; QR berisi `kode_pesanan` (bukan URL).
+
+---
+
+## 14. Lookup Pesanan dari QR
+
+Mencari satu pesanan berdasarkan kode yang tertanam pada QR kartu pesanan.
+
+**Endpoint**
+
+```http
+GET /orders/lookup?kode_pesanan=ORD-20261123-ABC12345
+```
+
+**Permission:** `orders.view`
+
+| Query | Tipe | Wajib | Keterangan |
+|---|---|---|---|
+| `kode_pesanan` | string | Ya | Kode pesanan. Huruf kecil dibuat uppercase oleh backend. |
+
+Response sukses berupa `Order` dengan relasi lengkap (`detail_pesanan`,
+`pembayaran`, `riwayat_status`, dll.). Jika tidak ditemukan, backend
+mengembalikan `404`:
+
+```json
+{
+    "success": false,
+    "message": "Pesanan dengan kode tersebut tidak ditemukan."
+}
+```
+
+## 15. Cetak Struk Pesanan (PNG)
+
+Menghasilkan gambar PNG berbentuk struk belanja versi ringkas. Isi struk hanya:
+
+- Nama pelanggan
+- Nomor pesanan
+- Tanggal masuk
+- Estimasi selesai
+- QR berisi `kode_pesanan`
+
+Rincian layanan, harga, dan total **tidak** ditampilkan di struk ini.
+
+**Endpoint**
+
+```http
+GET /orders/{order}/receipt
+```
+
+**Permission:** `orders.view`
+
+Response berupa gambar PNG (`image/png`, 440&times;600 px) dengan header
+`Content-Disposition: inline; filename="struk-{kode_pesanan}.png"`.
+
+QR pada struk dapat di-scan dari dashboard karyawan, lalu aplikasi membuka
+rincian pesanan dan form ubah status beserta riwayatnya.
 
 ---
 

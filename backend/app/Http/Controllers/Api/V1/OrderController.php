@@ -9,6 +9,7 @@ use App\Http\Resources\Api\V1\OrderResource;
 use App\Models\Layanan;
 use App\Models\MetodePembayaran;
 use App\Models\Pesanan;
+use App\Services\OrderReceiptImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,20 @@ use Illuminate\Validation\Rule;
 
 class OrderController extends Controller
 {
+    /** Status yang diizinkan, termasuk tahapan proses laundry dari scan QR. */
+    private const ORDER_STATUSES = [
+        'menunggu',
+        'dicuci',
+        'dikeringkan',
+        'dilipat',
+        'disetrika',
+        'diproses',
+        'siap_diambil',
+        'dalam_pengantaran',
+        'selesai',
+        'dibatalkan',
+    ];
+
     /**
      * Hitung estimasi selesai dari durasi terlama yang dipilih.
      *
@@ -116,6 +131,41 @@ class OrderController extends Controller
         ]);
 
         return new OrderResource($order);
+    }
+
+    /**
+     * Cari pesanan berdasarkan kode yang tertanam pada QR.
+     */
+    public function lookup(Request $request)
+    {
+        $validated = $request->validate([
+            'kode_pesanan' => ['required', 'string', 'max:50'],
+        ]);
+
+        $kode = Str::upper(trim($validated['kode_pesanan']));
+
+        $order = $this->orderQuery()
+            ->where('kode_pesanan', $kode)
+            ->first();
+
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesanan dengan kode tersebut tidak ditemukan.',
+            ], 404);
+        }
+
+        return new OrderResource($order);
+    }
+
+    /**
+     * Cetak struk pesanan sebagai PNG, lengkap dengan QR untuk update status.
+     */
+    public function receipt(Pesanan $order, OrderReceiptImage $receipt)
+    {
+        return response($receipt->generate($order), 200)
+            ->header('Content-Type', 'image/png')
+            ->header('Content-Disposition', 'inline; filename="struk-' . $order->kode_pesanan . '.png"');
     }
 
     public function store(StoreOrderRequest $request)
@@ -477,14 +527,7 @@ class OrderController extends Controller
             'status_pesanan' => [
                 'required',
                 'string',
-                Rule::in([
-                    'menunggu',
-                    'diproses',
-                    'siap_diambil',
-                    'dalam_pengantaran',
-                    'selesai',
-                    'dibatalkan',
-                ]),
+                Rule::in(self::ORDER_STATUSES),
             ],
             'keterangan' => ['nullable', 'string'],
         ]);

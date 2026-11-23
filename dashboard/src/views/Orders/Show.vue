@@ -9,11 +9,19 @@ import DeleteOrderDialog from '@/components/main/orders/DeleteOrderDialog.vue'
 import UpdateOrderStatusDialog from '@/components/main/orders/UpdateOrderStatusDialog.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowLeftIcon, DollarIcon, LoaderCircleIcon, PencilIcon, TrashBinIcon } from '@/icons/layout'
+import {
+  ArrowLeftIcon,
+  DollarIcon,
+  LoaderCircleIcon,
+  PencilIcon,
+  PrinterIcon,
+  TrashBinIcon,
+} from '@/icons/layout'
 import { orderStatusColor, orderStatusLabel } from '@/constants/orders'
 import { normalizeApiError } from '@/services/http'
 import { ordersApi } from '@/services/orders'
 import { useAuthStore } from '@/stores/auth'
+import { printOrderReceipt } from '@/utils/order-receipt'
 import type { Order } from '@/types/order'
 import { formatCurrency } from '@/utils/format'
 
@@ -96,6 +104,18 @@ const handlePaymentSaved = async (message: string) => {
   successMessage.value = message
   await load()
 }
+
+const printOrder = async () => {
+  if (!order.value) return
+
+  loadError.value = null
+
+  try {
+    await printOrderReceipt(order.value)
+  } catch (error) {
+    loadError.value = normalizeApiError(error).message
+  }
+}
 </script>
 
 <template>
@@ -156,6 +176,10 @@ const handlePaymentSaved = async (message: string) => {
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="sm" @click="printOrder">
+                <PrinterIcon class="size-4" />
+                Cetak struk
+              </Button>
               <Button
                 v-if="canRecordPayment && order.sisa_pembayaran > 0 && order.status_pesanan !== 'dibatalkan'"
                 size="sm"

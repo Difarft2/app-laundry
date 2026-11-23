@@ -35,7 +35,7 @@ role dan permission terbaru.
 | Layanan | Lihat | Lihat | Kelola | Tidak |
 | Waktu layanan | Lihat | Lihat | Kelola | Tidak |
 | Metode pembayaran | Lihat | Kelola | Lihat | Tidak |
-| Pesanan | Lihat, ubah status, hapus | Lihat | **Buat**, ubah, ubah status | Tidak |
+| Pesanan | Lihat, ubah status, hapus | Lihat | **Buat**, ubah, ubah status, scan QR & cetak struk | Tidak |
 | Pembayaran | Lihat | Lihat | Lihat, catat | Tidak |
 | Proses laundry | Tidak | Lihat | Kelola | Tidak |
 | Antar-jemput | Lihat, tugaskan | Lihat | Lihat | **Kelola** |
@@ -45,7 +45,8 @@ role dan permission terbaru.
 Aturan utama:
 
 -   **Hanya karyawan** yang memiliki permission `orders.create` (membuat
-    pesanan) dan `payments.create` (mencatat pembayaran).
+    pesanan) dan `payments.create` (mencatat pembayaran). Tombol **Scan QR
+    pesanan** dan **Cetak struk** juga hanya muncul untuk karyawan.
 -   **Admin bersifat read-only untuk pesanan dan pembayaran**: hanya memiliki
     `orders.view` dan `payments.view`.
 -   **Owner tidak dapat membuat atau mengubah data pesanan**, tetapi dapat

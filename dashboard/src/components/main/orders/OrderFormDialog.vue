@@ -25,7 +25,7 @@ import { fetchActivePaymentMethods, type PaymentMethodOption } from '@/services/
 import { normalizeApiError } from '@/services/http'
 import { ordersApi } from '@/services/orders'
 import { servicesApi } from '@/services/services'
-import type { CreateOrderPayload } from '@/types/order'
+import type { CreateOrderPayload, Order } from '@/types/order'
 import type { Service } from '@/types/service'
 import { formatCurrency } from '@/utils/format'
 import { translateFieldErrors } from './errors'
@@ -36,6 +36,7 @@ const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{
   (e: 'update:open', open: boolean): void
   (e: 'saved', message: string): void
+  (e: 'created', order: Order): void
 }>()
 
 const form = reactive<OrderFormData>(emptyOrderForm())
@@ -245,6 +246,7 @@ const onSubmit = async (event?: Event) => {
 
     const saved = await ordersApi.create(payload)
     emit('saved', `Pesanan ${saved.kode_pesanan} berhasil dibuat.`)
+    emit('created', saved)
     emit('update:open', false)
   } catch (error) {
     const apiError = normalizeApiError(error)
