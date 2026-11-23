@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { Button } from '@/components/ui/button'
+import ScanOrderDialog from '@/components/main/orders/ScanOrderDialog.vue'
 import CourierHistory from '@/components/main/dashboard/laundry/CourierHistory.vue'
 import CourierTasks from '@/components/main/dashboard/laundry/CourierTasks.vue'
 import DailyActivity from '@/components/main/dashboard/laundry/DailyActivity.vue'
@@ -27,9 +28,12 @@ import {
   ownerMetrics,
 } from '@/components/main/dashboard/laundry/data'
 import type { DashboardRole } from '@/components/main/dashboard/laundry/types'
+import { CameraIcon } from '@/icons/layout'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
+const scanOpen = ref(false)
+const scanMessage = ref<string | null>(null)
 
 /**
  * Dashboard selalu mengikuti role akun yang sedang login. Tidak ada
@@ -48,6 +52,7 @@ const canViewLaundry = computed(() => auth.hasPermission('laundry.view'))
 const canViewDelivery = computed(() => auth.hasPermission('delivery.view'))
 const canViewUsers = computed(() => auth.hasPermission('users.view'))
 const canCreateOrder = computed(() => auth.hasPermission('orders.create'))
+const canUpdateStatus = computed(() => auth.hasPermission('orders.update-status'))
 
 const metrics = computed(() => {
   if (isKaryawan.value) return karyawanMetrics
@@ -101,10 +106,24 @@ const activitySubtitle = computed(() => {
             Pencatatan pesanan pelanggan adalah tugas operasional karyawan.
           </p>
         </div>
-        <Button as-child class="shrink-0">
-          <RouterLink to="/orders?create=1">Buat pesanan</RouterLink>
-        </Button>
+        <div class="flex flex-wrap gap-2">
+          <Button v-if="canUpdateStatus" variant="outline" class="shrink-0" @click="scanOpen = true">
+            <CameraIcon class="size-4" />
+            Scan QR pesanan
+          </Button>
+          <Button as-child class="shrink-0">
+            <RouterLink to="/orders?create=1">Buat pesanan</RouterLink>
+          </Button>
+        </div>
       </div>
+
+      <p
+        v-if="scanMessage"
+        role="status"
+        class="rounded-xl border border-success-200 bg-success-50 px-5 py-3 text-sm text-success-700 dark:border-success-500/20 dark:bg-success-500/10 dark:text-success-400"
+      >
+        {{ scanMessage }}
+      </p>
 
       <!-- Admin hanya memantau, tidak memiliki aksi operasional. -->
       <div
@@ -267,6 +286,11 @@ const activitySubtitle = computed(() => {
         Akun ini belum memiliki akses ke modul operasional. Hubungi owner untuk pengaturan
         permission.
       </p>
+
+      <ScanOrderDialog
+        v-model:open="scanOpen"
+        @status-updated="scanMessage = $event"
+      />
     </div>
   </AdminLayout>
 </template>

@@ -1,7 +1,17 @@
 import type { PaginationLinks, PaginationMeta } from './auth'
 import type { Payment } from './payment'
 
-export type OrderStatus = 'menunggu' | 'diproses' | 'siap_diambil' | 'dalam_pengantaran' | 'selesai' | 'dibatalkan'
+export type OrderStatus =
+  | 'menunggu'
+  | 'dicuci'
+  | 'dikeringkan'
+  | 'dilipat'
+  | 'disetrika'
+  | 'diproses'
+  | 'siap_diambil'
+  | 'dalam_pengantaran'
+  | 'selesai'
+  | 'dibatalkan'
 
 export interface OrderCustomer {
   nama: string

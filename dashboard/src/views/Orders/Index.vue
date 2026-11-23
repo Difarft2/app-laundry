@@ -6,6 +6,7 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import RecordPaymentDialog from '@/components/main/payments/RecordPaymentDialog.vue'
 import DeleteOrderDialog from '@/components/main/orders/DeleteOrderDialog.vue'
 import OrderFormDialog from '@/components/main/orders/OrderFormDialog.vue'
+import OrderSuccessDialog from '@/components/main/orders/OrderSuccessDialog.vue'
 import UpdateOrderStatusDialog from '@/components/main/orders/UpdateOrderStatusDialog.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -153,6 +154,8 @@ const paginationPages = computed<(number | 'ellipsis-start' | 'ellipsis-end')[]>
 })
 
 const formOpen = ref(false)
+const successOpen = ref(false)
+const successOrder = ref<Order | null>(null)
 
 const statusOpen = ref(false)
 const statusTarget = ref<Order | null>(null)
@@ -180,6 +183,13 @@ const openPayment = (order: Order) => {
 
 const handleSaved = async (message: string) => {
   successMessage.value = message
+  page.value = 1
+  await load()
+}
+
+const handleCreated = async (order: Order) => {
+  successOrder.value = order
+  successOpen.value = true
   page.value = 1
   await load()
 }
@@ -563,7 +573,9 @@ const remainingLabel = (order: Order): string =>
       </div>
     </div>
 
-    <OrderFormDialog v-model:open="formOpen" @saved="handleSaved" />
+    <OrderFormDialog v-model:open="formOpen" @saved="handleSaved" @created="handleCreated" />
+
+    <OrderSuccessDialog v-model:open="successOpen" :order="successOrder" />
 
     <UpdateOrderStatusDialog
       v-model:open="statusOpen"

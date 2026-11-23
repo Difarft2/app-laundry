@@ -21,6 +21,7 @@
     "clsx": "^2.1.1",
     "flatpickr": "^4.6.13",
     "fullcalendar": "7.0.2",
+    "html5-qrcode": "^2.3.8",
     "jsvectormap": "^1.6.0",
     "lucide-vue-next": "^1.0.0",
     "pinia": "^4.1.0",

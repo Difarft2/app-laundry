@@ -32,6 +32,9 @@ importers:
       fullcalendar:
         specifier: 7.0.2
         version: 7.0.2(temporal-polyfill@1.0.4)
+      html5-qrcode:
+        specifier: ^2.3.8
+        version: 2.3.8
       jsvectormap:
         specifier: ^1.6.0
         version: 1.6.0
@@ -1611,6 +1614,9 @@ packages:
 
   hookable@5.5.3:
     resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
+
+  html5-qrcode@2.3.8:
+    resolution: {integrity: sha512-jsr4vafJhwoLVEDW3n1KvPnCCXWaQfRng0/EEYk1vNcQGcG/htAdhJX0be8YyqMoSz7+hZvOZSTAepsabiuhiQ==}
 
   https-proxy-agent@5.0.1:
     resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
@@ -3981,6 +3987,8 @@ snapshots:
   he@1.2.0: {}
 
   hookable@5.5.3: {}
+
+  html5-qrcode@2.3.8: {}
 
   https-proxy-agent@5.0.1(supports-color@8.1.1):
     dependencies:
