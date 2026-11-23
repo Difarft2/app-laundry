@@ -44,7 +44,6 @@ export const navItems: NavItem[] = [
     name: 'Antar-Jemput',
     path: '/pickup-delivery',
     permission: 'delivery.view',
-    disabled: true,
   },
 ]
 

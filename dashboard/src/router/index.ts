@@ -45,6 +45,24 @@ const router = createRouter({
       },
     },
     {
+      path: '/pickup-delivery',
+      name: 'PickupDelivery',
+      component: () => import('../views/Courier/Index.vue'),
+      meta: {
+        title: 'Antar-Jemput',
+        permission: 'delivery.view',
+      },
+    },
+    {
+      path: '/pickup-delivery/:id',
+      name: 'PickupDeliveryDetail',
+      component: () => import('../views/Courier/Show.vue'),
+      meta: {
+        title: 'Detail Antar-Jemput',
+        permission: 'delivery.view',
+      },
+    },
+    {
       path: '/users',
       name: 'Users',
       component: () => import('../views/Users/Index.vue'),

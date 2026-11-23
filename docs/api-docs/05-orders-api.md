@@ -32,7 +32,7 @@ Token diperoleh melalui endpoint login.
 
 | Role | Permission |
 |---|---|
-| Owner | Hanya melihat daftar/detail pesanan (read-only). |
+| Owner | Melihat, mengubah status, dan menghapus pesanan. **Tidak dapat membuat atau mengubah data pesanan.** |
 | Admin | Hanya melihat daftar/detail pesanan (read-only). |
 | Karyawan | Melihat, **membuat**, mengubah, dan mengubah status pesanan. |
 | Kurir | Tidak memiliki akses Orders. |
@@ -45,10 +45,11 @@ Daftar permission:
 - `orders.update-status`
 - `orders.delete`
 
-> Catatan: permission `orders.delete` tersedia, tetapi tidak diberikan ke role
-> default mana pun pada `RolePermissionSeeder`. Owner dan admin bersifat
-> read-only; hanya karyawan yang melakukan mutasi pesanan. Endpoint pembayaran
-> terkait pesanan dijelaskan pada dokumen **Payments API** (`06-payments.md`).
+> Catatan: Admin bersifat read-only untuk pesanan. Owner dapat melihat,
+> mengubah status, dan menghapus pesanan, tetapi tidak dapat membuat atau
+> mengubah data pesanan. Hanya karyawan yang dapat membuat dan mengubah data
+> pesanan. Endpoint pembayaran terkait pesanan dijelaskan pada dokumen
+> **Payments API** (`07-payments.md`).
 
 ## 4. Endpoint Summary
 
@@ -361,7 +362,7 @@ terbaru.
 | `catatan` | Catatan pembayaran |
 
 Struktur lengkap dan endpoint pembayaran dijelaskan pada dokumen
-**Payments API** (`06-payments.md`).
+**Payments API** (`07-payments.md`).
 
 ---
 

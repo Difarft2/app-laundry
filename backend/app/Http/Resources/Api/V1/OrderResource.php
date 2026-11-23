@@ -81,6 +81,18 @@ class OrderResource extends JsonResource
                 ])
             ),
 
+            'antar_jemput' => $this->whenLoaded(
+                'antarJemput',
+                fn () => $this->antarJemput->map(fn ($task) => [
+                    'id_antar_jemput' => $task->id_antar_jemput,
+                    'jenis_antar_jemput' => $task->jenis_antar_jemput,
+                    'status_antar_jemput' => $task->status_antar_jemput,
+                    'jadwal' => $task->jadwal,
+                    'alamat_tujuan' => $task->alamat_tujuan,
+                    'kurir' => $task->kurir?->name,
+                ])
+            ),
+
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

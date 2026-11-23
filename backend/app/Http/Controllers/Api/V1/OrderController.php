@@ -64,6 +64,7 @@ class OrderController extends Controller
             'pembayaran.metodePembayaran',
             'pembayaran.user',
             'riwayatStatus.user',
+            'antarJemput.kurir',
         ]);
     }
 
