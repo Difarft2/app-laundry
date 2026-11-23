@@ -79,6 +79,12 @@ export interface PaginationLinks {
   next: string | null
 }
 
+export interface PaginatedResponse<T> {
+  data: T[]
+  links: PaginationLinks
+  meta: PaginationMeta
+}
+ 
 export interface PaginatedUsers {
   data: AuthUser[]
   links: PaginationLinks
