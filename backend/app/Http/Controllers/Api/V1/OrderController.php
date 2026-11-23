@@ -23,6 +23,7 @@ class OrderController extends Controller
             'detailPesanan.prosesLaundry.riwayatProses',
             'pembayaran',
             'riwayatStatus.user',
+            'antarJemput.kurir',
         ]);
     }
 

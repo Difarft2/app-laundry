@@ -38,7 +38,6 @@ class RolePermissionSeeder extends Seeder
             'laundry.update',
             'delivery.view',
             'delivery.assign',
-            'delivery.update',
             'reports.view',
             'settings.manage',
             'roles.manage',
@@ -95,15 +94,21 @@ class RolePermissionSeeder extends Seeder
             'dashboard.view',
             'users.view',
             'users.create',
+            'users.update',
+            'users.delete',
             'services.view',
             'service-times.view',
             'payment-methods.view',
             'orders.view',
+            'orders.update-status',
+            'orders.delete',
             'payments.view',
-            'laundry.view',
             'delivery.view',
+            'delivery.assign',
             'reports.view',
             'finance.view',
+            'settings.manage',
+            'roles.manage',
         ]);
 
         $karyawan = Role::firstOrCreate([
@@ -124,7 +129,6 @@ class RolePermissionSeeder extends Seeder
             'laundry.view',
             'laundry.update',
             'delivery.view',
-            'delivery.assign',
         ]);
 
         $kurir = Role::firstOrCreate([
