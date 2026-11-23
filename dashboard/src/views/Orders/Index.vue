@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import RecordPaymentDialog from '@/components/main/payments/RecordPaymentDialog.vue'
 import DeleteOrderDialog from '@/components/main/orders/DeleteOrderDialog.vue'
 import OrderFormDialog from '@/components/main/orders/OrderFormDialog.vue'
 import UpdateOrderStatusDialog from '@/components/main/orders/UpdateOrderStatusDialog.vue'
@@ -36,6 +37,7 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components
 import { ORDER_STATUS_OPTIONS, orderStatusColor, orderStatusLabel } from '@/constants/orders'
 import {
   ArrowRightIcon,
+  DollarIcon,
   HorizontalDotsIcon,
   InboxIcon,
   LoaderCircleIcon,
@@ -69,6 +71,7 @@ const canCreate = computed(() => auth.hasPermission('orders.create'))
 const canUpdate = computed(() => auth.hasPermission('orders.update'))
 const canUpdateStatus = computed(() => auth.hasPermission('orders.update-status'))
 const canDelete = computed(() => auth.hasPermission('orders.delete'))
+const canRecordPayment = computed(() => auth.hasPermission('payments.create'))
 
 const totalPages = computed(() => Math.max(1, meta.value?.last_page ?? 1))
 
@@ -157,6 +160,9 @@ const statusTarget = ref<Order | null>(null)
 const deleteOpen = ref(false)
 const deleteTarget = ref<Order | null>(null)
 
+const paymentOpen = ref(false)
+const paymentTarget = ref<Order | null>(null)
+
 const openStatus = (order: Order) => {
   statusTarget.value = order
   statusOpen.value = true
@@ -167,6 +173,11 @@ const openDelete = (order: Order) => {
   deleteOpen.value = true
 }
 
+const openPayment = (order: Order) => {
+  paymentTarget.value = order
+  paymentOpen.value = true
+}
+
 const handleSaved = async (message: string) => {
   successMessage.value = message
   page.value = 1
@@ -174,6 +185,11 @@ const handleSaved = async (message: string) => {
 }
 
 const handleUpdated = async (message: string) => {
+  successMessage.value = message
+  await load()
+}
+
+const handlePaymentSaved = async (message: string) => {
   successMessage.value = message
   await load()
 }
@@ -467,6 +483,14 @@ const remainingLabel = (order: Order): string =>
                             Lihat detail
                           </DropdownMenuItem>
 
+                          <DropdownMenuItem
+                            v-if="canRecordPayment && order.sisa_pembayaran > 0 && order.status_pesanan !== 'dibatalkan'"
+                            @select="openPayment(order)"
+                          >
+                            <DollarIcon class="size-5" />
+                            Catat pembayaran
+                          </DropdownMenuItem>
+
                           <DropdownMenuItem v-if="canUpdateStatus" @select="openStatus(order)">
                             <PencilIcon class="size-5" />
                             Ubah status
@@ -548,5 +572,11 @@ const remainingLabel = (order: Order): string =>
     />
 
     <DeleteOrderDialog v-model:open="deleteOpen" :order="deleteTarget" @deleted="handleDeleted" />
+
+    <RecordPaymentDialog
+      v-model:open="paymentOpen"
+      :order="paymentTarget"
+      @saved="handlePaymentSaved"
+    />
   </AdminLayout>
 </template>

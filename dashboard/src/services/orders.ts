@@ -14,7 +14,7 @@ export const ordersApi = {
     const { data } = await http.get<PaginatedOrders>('/orders', {
       params: {
         search: query.search || undefined,
-        status: query.status || undefined,
+        status_pesanan: query.status || undefined,
         tanggal_mulai: query.tanggal_mulai || undefined,
         tanggal_selesai: query.tanggal_selesai || undefined,
         per_page: query.per_page || undefined,

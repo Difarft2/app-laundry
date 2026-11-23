@@ -8,6 +8,12 @@ export interface OrderFormData {
   idLayanan: string
   jumlah: string
   catatanDetail: string
+  /** "now" = bayar sekarang (buat data pembayaran), "later" = bayar nanti. */
+  caraBayar: 'now' | 'later'
+  /** ID metode pembayaran saat caraBayar = "now". */
+  idMetodePembayaran: string
+  jumlahBayar: string
+  statusPembayaran: 'pending' | 'berhasil'
 }
 
 /** Format `datetime-local` yang dipakai backend: "YYYY-MM-DD HH:mm:ss". */
@@ -32,6 +38,10 @@ export const emptyOrderForm = (): OrderFormData => ({
   idLayanan: '',
   jumlah: '',
   catatanDetail: '',
+  caraBayar: 'later',
+  idMetodePembayaran: '',
+  jumlahBayar: '',
+  statusPembayaran: 'pending',
 })
 
 /**
@@ -70,6 +80,18 @@ export const validateOrderForm = (
   const diskon = Number(diskonRaw.replace(',', '.'))
   if (diskonRaw && (Number.isNaN(diskon) || diskon < 0)) {
     errors.diskon = 'Diskon tidak boleh kurang dari 0.'
+  }
+
+  if (data.caraBayar === 'now') {
+    if (!data.idMetodePembayaran) {
+      errors.idMetodePembayaran = 'Metode pembayaran wajib dipilih.'
+    }
+
+    const bayarRaw = String(data.jumlahBayar ?? '').trim()
+    const bayar = Number(bayarRaw.replace(',', '.'))
+    if (!bayarRaw || Number.isNaN(bayar) || bayar <= 0) {
+      errors.jumlahBayar = 'Jumlah bayar wajib lebih dari 0.'
+    }
   }
 
   return errors

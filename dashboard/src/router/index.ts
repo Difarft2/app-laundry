@@ -36,6 +36,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/payments',
+      name: 'Payments',
+      component: () => import('../views/Payments/Index.vue'),
+      meta: {
+        title: 'Riwayat Pembayaran',
+        permission: 'payments.view',
+      },
+    },
+    {
       path: '/users',
       name: 'Users',
       component: () => import('../views/Users/Index.vue'),

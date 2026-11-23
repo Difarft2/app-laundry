@@ -3,7 +3,6 @@ import { ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -81,9 +80,6 @@ const onConfirm = async () => {
       </div>
 
       <DialogFooter class="mx-0 mb-0 gap-3 p-0 pt-2 sm:justify-end">
-        <DialogClose as-child>
-          <Button variant="outline" type="button" :disabled="submitting">Batal</Button>
-        </DialogClose>
         <Button variant="destructive" type="button" :disabled="submitting" @click="onConfirm">
           {{ submitting ? 'Menghapus...' : 'Hapus pesanan' }}
         </Button>
