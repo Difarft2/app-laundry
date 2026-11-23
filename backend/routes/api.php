@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\ServiceTimeController;
 use App\Http\Controllers\Api\V1\PaymentMethodController;
 use App\Http\Controllers\Api\V1\OrderController;
+use App\Http\Controllers\Api\V1\DeliveryTaskController;
 
 Route::prefix('v1')->group(function () {
 
@@ -128,6 +129,27 @@ Route::prefix('v1')->group(function () {
 
             Route::delete('/{order}', [OrderController::class, 'destroy'])
                 ->middleware('permission:orders.delete');
+        });
+
+        // Delivery (Antar-Jemput) Management
+        Route::prefix('delivery-tasks')->group(function () {
+            Route::get('/couriers', [DeliveryTaskController::class, 'couriers'])
+                ->middleware('permission:delivery.assign');
+
+            Route::get('/', [DeliveryTaskController::class, 'index'])
+                ->middleware('permission:delivery.view');
+
+            Route::post('/', [DeliveryTaskController::class, 'store'])
+                ->middleware('permission:delivery.assign');
+
+            Route::get('/{deliveryTask}', [DeliveryTaskController::class, 'show'])
+                ->middleware('permission:delivery.view');
+
+            Route::patch('/{deliveryTask}/assign', [DeliveryTaskController::class, 'assign'])
+                ->middleware('permission:delivery.assign');
+
+            Route::patch('/{deliveryTask}/status', [DeliveryTaskController::class, 'updateStatus'])
+                ->middleware('permission:delivery.update');
         });
     });
 });
