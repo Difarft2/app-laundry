@@ -353,8 +353,8 @@ const onSubmit = async (event?: Event) => {
                   multiline
                 >
                   <span class="flex min-w-0 flex-col gap-0.5 text-start">
-                    <span class="break-words font-semibold">{{ service.nama_layanan }}</span>
-                    <span class="break-words text-xs font-normal text-gray-500 dark:text-gray-400">
+                    <span class="wrap-break-word font-semibold">{{ service.nama_layanan }}</span>
+                    <span class="wrap-break-word text-xs font-normal text-gray-500 dark:text-gray-400">
                       {{ formatCurrency(Number(service.harga)) }}/{{
                         service.jenis_layanan === 'kiloan' ? 'kg' : 'item'
                       }}
@@ -382,7 +382,7 @@ const onSubmit = async (event?: Event) => {
             class="min-w-0 space-y-2.5 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-3 dark:border-gray-700 dark:bg-white/3 sm:px-4"
           >
             <div class="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
-              <p class="min-w-0 break-words font-semibold text-gray-800 dark:text-white/90">
+              <p class="min-w-0 wrap-break-word font-semibold text-gray-800 dark:text-white/90">
                 {{ selectedService.nama_layanan }}
               </p>
               <p class="shrink-0 font-semibold text-brand-600 dark:text-brand-400">
@@ -407,7 +407,7 @@ const onSubmit = async (event?: Event) => {
 
             <p
               v-if="selectedService.deskripsi"
-              class="break-words text-xs leading-relaxed text-gray-600 dark:text-gray-400"
+              class="wrap-break-word text-xs leading-relaxed text-gray-600 dark:text-gray-400"
             >
               {{ selectedService.deskripsi }}
             </p>
@@ -415,13 +415,13 @@ const onSubmit = async (event?: Event) => {
             <dl class="grid gap-x-4 gap-y-2 border-t border-gray-200 pt-2.5 text-xs dark:border-gray-700 sm:grid-cols-2">
               <div class="min-w-0">
                 <dt class="text-gray-500 dark:text-gray-400">Lama pengerjaan</dt>
-                <dd class="mt-0.5 break-words font-medium text-gray-800 dark:text-white/90">
+                <dd class="mt-0.5 wrap-break-word font-medium text-gray-800 dark:text-white/90">
                   {{ estimasiDurasiLabel }}
                 </dd>
               </div>
               <div class="min-w-0">
                 <dt class="text-gray-500 dark:text-gray-400">Estimasi selesai</dt>
-                <dd class="mt-0.5 break-words font-medium text-gray-800 dark:text-white/90">
+                <dd class="mt-0.5 wrap-break-word font-medium text-gray-800 dark:text-white/90">
                   {{ estimasiSelesaiLabel }}
                 </dd>
               </div>
@@ -597,13 +597,13 @@ const onSubmit = async (event?: Event) => {
           <div class="grid gap-3 sm:grid-cols-2">
             <div class="min-w-0 rounded-xl border border-gray-200 px-4 py-3 dark:border-gray-800">
               <p class="text-xs text-gray-500 dark:text-gray-400">Lama pengerjaan</p>
-              <p class="mt-0.5 break-words text-sm font-semibold text-gray-800 dark:text-white/90">
+              <p class="mt-0.5 wrap-break-word text-sm font-semibold text-gray-800 dark:text-white/90">
                 {{ estimasiDurasiLabel }}
               </p>
             </div>
             <div class="min-w-0 rounded-xl border border-gray-200 px-4 py-3 dark:border-gray-800">
               <p class="text-xs text-gray-500 dark:text-gray-400">Estimasi selesai</p>
-              <p class="mt-0.5 break-words text-sm font-semibold text-gray-800 dark:text-white/90">
+              <p class="mt-0.5 wrap-break-word text-sm font-semibold text-gray-800 dark:text-white/90">
                 {{ estimasiSelesaiLabel }}
               </p>
               <p class="mt-0.5 text-[11px] text-gray-400 dark:text-gray-500">
