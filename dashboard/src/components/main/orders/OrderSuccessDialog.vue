@@ -15,7 +15,7 @@ import { orderStatusColor, orderStatusLabel } from '@/constants/orders'
 import { normalizeApiError } from '@/services/http'
 import type { Order } from '@/types/order'
 import { formatCurrency, formatDateTime } from '@/utils/format'
-import { printOrderPdf } from '@/utils/order-pdf'
+import { printOrderReceipt } from '@/utils/order-receipt'
 
 const props = defineProps<{
   open: boolean
@@ -37,7 +37,7 @@ const printOrder = async () => {
   printError.value = null
 
   try {
-    await printOrderPdf(order)
+    await printOrderReceipt(order)
   } catch (error) {
     printError.value = normalizeApiError(error).message
   } finally {
@@ -58,8 +58,8 @@ const printOrder = async () => {
           {{ order?.kode_pesanan ?? '-' }}
         </DialogTitle>
         <DialogDescription class="text-sm text-gray-500 dark:text-gray-400">
-          Cetak kartu pesanan untuk pelanggan. QR di dalam PDF bisa di-scan karyawan untuk melihat
-          rincian dan memperbarui status.
+          Cetak struk pesanan (PNG) untuk pelanggan. QR di dalam struk bisa di-scan karyawan untuk
+          melihat rincian dan memperbarui status.
         </DialogDescription>
       </DialogHeader>
 
@@ -124,7 +124,7 @@ const printOrder = async () => {
         <Button :disabled="!order || printing" @click="printOrder">
           <LoaderCircleIcon v-if="printing" class="size-4 animate-spin" />
           <PrinterIcon v-else class="size-4" />
-          {{ printing ? 'Menyiapkan PDF...' : 'Cetak pesanan' }}
+          {{ printing ? 'Menyiapkan struk...' : 'Cetak struk' }}
         </Button>
       </DialogFooter>
     </DialogContent>

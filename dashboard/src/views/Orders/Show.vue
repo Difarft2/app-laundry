@@ -21,7 +21,7 @@ import { orderStatusColor, orderStatusLabel } from '@/constants/orders'
 import { normalizeApiError } from '@/services/http'
 import { ordersApi } from '@/services/orders'
 import { useAuthStore } from '@/stores/auth'
-import { printOrderPdf } from '@/utils/order-pdf'
+import { printOrderReceipt } from '@/utils/order-receipt'
 import type { Order } from '@/types/order'
 import { formatCurrency } from '@/utils/format'
 
@@ -111,7 +111,7 @@ const printOrder = async () => {
   loadError.value = null
 
   try {
-    await printOrderPdf(order.value)
+    await printOrderReceipt(order.value)
   } catch (error) {
     loadError.value = normalizeApiError(error).message
   }
@@ -178,7 +178,7 @@ const printOrder = async () => {
             <div class="flex flex-wrap items-center gap-2">
               <Button variant="outline" size="sm" @click="printOrder">
                 <PrinterIcon class="size-4" />
-                Cetak pesanan
+                Cetak struk
               </Button>
               <Button
                 v-if="canRecordPayment && order.sisa_pembayaran > 0 && order.status_pesanan !== 'dibatalkan'"

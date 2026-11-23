@@ -52,7 +52,7 @@ import {
 import { normalizeApiError } from '@/services/http'
 import { ordersApi } from '@/services/orders'
 import { useAuthStore } from '@/stores/auth'
-import { printOrderPdf } from '@/utils/order-pdf'
+import { printOrderReceipt } from '@/utils/order-receipt'
 import type { PaginationMeta } from '@/types/auth'
 import type { Order, OrderStatus } from '@/types/order'
 import { formatCurrency } from '@/utils/format'
@@ -187,7 +187,7 @@ const printOrder = async (order: Order) => {
   loadError.value = null
 
   try {
-    await printOrderPdf(order)
+    await printOrderReceipt(order)
   } catch (error) {
     loadError.value = normalizeApiError(error).message
   }
@@ -507,7 +507,7 @@ const remainingLabel = (order: Order): string =>
 
                           <DropdownMenuItem @select="printOrder(order)">
                             <PrinterIcon class="size-5" />
-                            Cetak pesanan
+                            Cetak struk
                           </DropdownMenuItem>
 
                           <DropdownMenuItem

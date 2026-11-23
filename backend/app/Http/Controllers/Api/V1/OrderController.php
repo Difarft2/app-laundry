@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Order\StoreOrderRequest;
 use App\Http\Requests\Api\V1\Order\UpdateOrderRequest;
@@ -10,7 +9,7 @@ use App\Http\Resources\Api\V1\OrderResource;
 use App\Models\Layanan;
 use App\Models\MetodePembayaran;
 use App\Models\Pesanan;
-use App\Services\OrderQrCode;
+use App\Services\OrderReceiptImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -160,25 +159,13 @@ class OrderController extends Controller
     }
 
     /**
-     * Cetak kartu pesanan sebagai PDF, lengkap dengan QR untuk update status.
+     * Cetak struk pesanan sebagai PNG, lengkap dengan QR untuk update status.
      */
-    public function pdf(Pesanan $order, OrderQrCode $qrCode)
+    public function receipt(Pesanan $order, OrderReceiptImage $receipt)
     {
-        $order->load([
-            'detailPesanan.layanan.waktuLayanan',
-            'detailPesanan.prosesLaundry',
-            'pembayaran',
-            'riwayatStatus.user',
-        ]);
-
-        $qrDataUri = $qrCode->dataUri($order->kode_pesanan);
-
-        $pdf = Pdf::loadView('orders.pdf', [
-            'order' => $order,
-            'qrCode' => $qrDataUri,
-        ])->setPaper('a4', 'portrait');
-
-        return $pdf->stream('pesanan-' . $order->kode_pesanan . '.pdf');
+        return response($receipt->generate($order), 200)
+            ->header('Content-Type', 'image/png')
+            ->header('Content-Disposition', 'inline; filename="struk-' . $order->kode_pesanan . '.png"');
     }
 
     public function store(StoreOrderRequest $request)

@@ -59,7 +59,7 @@ Daftar permission:
 | POST | `/orders` | Membuat pesanan | `orders.create` |
 | GET | `/orders/lookup?kode_pesanan=` | Cari pesanan dari QR / kode pesanan | `orders.view` |
 | GET | `/orders/{order}` | Detail pesanan | `orders.view` |
-| GET | `/orders/{order}/pdf` | Cetak kartu pesanan (PDF + QR) | `orders.view` |
+| GET | `/orders/{order}/receipt` | Cetak struk pesanan (PNG + QR) | `orders.view` |
 | PUT | `/orders/{order}` | Mengubah pesanan | `orders.update` |
 | PATCH | `/orders/{order}/status` | Mengubah status pesanan | `orders.update-status` |
 | DELETE | `/orders/{order}` | Menghapus pesanan | `orders.delete` |
@@ -600,9 +600,9 @@ Frontend harus memperhatikan hal-hal berikut:
 8. Tampilkan `estimasi_selesai` dari backend; jangan menghitung sendiri dari durasi layanan.
 9. Gunakan `sisa_pembayaran` dari backend untuk memutuskan apakah tombol **Catat pembayaran** perlu ditampilkan.
 10. Gunakan `pembayaran` dari detail pesanan sebagai sumber riwayat pembayaran; endpoint pembayaran dijelaskan pada dokumen **Payments API**.
-11. Tombol cetak PDF pesanan tersedia di dialog sukses create, menu aksi baris
+11. Tombol **Cetak struk** tersedia di dialog sukses create, menu aksi baris
     daftar pesanan, dan halaman detail pesanan. Ketiganya memakai endpoint
-    `GET /orders/{order}/pdf`.
+    `GET /orders/{order}/receipt`.
 12. Untuk scan QR, gunakan `GET /orders/lookup`; QR berisi `kode_pesanan` (bukan URL).
 
 ---
@@ -634,23 +634,30 @@ mengembalikan `404`:
 }
 ```
 
-## 15. Cetak Kartu Pesanan (PDF)
+## 15. Cetak Struk Pesanan (PNG)
 
-Menghasilkan PDF kartu pesanan berisi nama pelanggan, nomor pesanan, daftar
-layanan, total, dan QR berisi `kode_pesanan`.
+Menghasilkan gambar PNG berbentuk struk belanja versi ringkas. Isi struk hanya:
+
+- Nama pelanggan
+- Nomor pesanan
+- Tanggal masuk
+- Estimasi selesai
+- QR berisi `kode_pesanan`
+
+Rincian layanan, harga, dan total **tidak** ditampilkan di struk ini.
 
 **Endpoint**
 
 ```http
-GET /orders/{order}/pdf
+GET /orders/{order}/receipt
 ```
 
 **Permission:** `orders.view`
 
-Response berupa stream PDF (`application/pdf`) dengan header
-`Content-Disposition: inline; filename="pesanan-{kode_pesanan}.pdf"`.
+Response berupa gambar PNG (`image/png`, 440&times;600 px) dengan header
+`Content-Disposition: inline; filename="struk-{kode_pesanan}.png"`.
 
-QR pada PDF dapat di-scan dari dashboard karyawan, lalu aplikasi membuka
+QR pada struk dapat di-scan dari dashboard karyawan, lalu aplikasi membuka
 rincian pesanan dan form ubah status beserta riwayatnya.
 
 ---

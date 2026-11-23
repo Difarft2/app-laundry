@@ -6,14 +6,14 @@ use BaconQrCode\Common\ErrorCorrectionLevel;
 use BaconQrCode\Encoder\Encoder;
 
 /**
- * Membuat data URI PNG untuk QR pesanan.
+ * Membuat PNG QR pesanan.
  *
  * Paket QR yang terpasang hanya menyediakan backend PNG via imagick,
  * sehingga matrix QR-nya digambar langsung dengan GD yang tersedia.
  */
 class OrderQrCode
 {
-    public function dataUri(string $content, int $size = 180, int $margin = 2): string
+    public function png(string $content, int $size = 190, int $margin = 2): string
     {
         $matrix = Encoder::encode(
             $content,
@@ -55,8 +55,7 @@ class OrderQrCode
 
         ob_start();
         imagepng($image);
-        $png = (string) ob_get_clean();
 
-        return 'data:image/png;base64,' . base64_encode($png);
+        return (string) ob_get_clean();
     }
 }

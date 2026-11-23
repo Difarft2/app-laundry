@@ -36,8 +36,8 @@ export const ordersApi = {
     return data.data
   },
 
-  async pdf(id: number): Promise<Blob> {
-    const { data } = await http.get<Blob>(`/orders/${id}/pdf`, {
+  async receipt(id: number): Promise<Blob> {
+    const { data } = await http.get<Blob>(`/orders/${id}/receipt`, {
       responseType: 'blob',
     })
     return data
