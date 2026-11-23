@@ -3,7 +3,6 @@ import { computed, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -144,9 +143,6 @@ const onSubmit = async (event?: Event) => {
         </Field>
 
         <DialogFooter class="mx-0 mb-0 gap-3 p-0 pt-2 sm:justify-end">
-          <DialogClose as-child>
-            <Button variant="outline" type="button" :disabled="submitting">Batal</Button>
-          </DialogClose>
           <Button type="submit" :disabled="submitting || !canChange">
             {{ submitting ? 'Menyimpan...' : 'Simpan status' }}
           </Button>

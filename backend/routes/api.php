@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\ServiceTimeController;
 use App\Http\Controllers\Api\V1\PaymentMethodController;
+use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\DeliveryTaskController;
 
@@ -107,6 +108,18 @@ Route::prefix('v1')->group(function () {
 
             Route::delete('/{paymentMethod}', [PaymentMethodController::class, 'destroy'])
                 ->middleware('permission:payment-methods.delete');
+        });
+
+        // Payment History & Recording
+        Route::prefix('payments')->group(function () {
+            Route::get('/', [PaymentController::class, 'index'])
+                ->middleware('permission:payments.view');
+
+            Route::get('/{payment}', [PaymentController::class, 'show'])
+                ->middleware('permission:payments.view');
+
+            Route::post('/', [PaymentController::class, 'store'])
+                ->middleware('permission:payments.create');
         });
 
         // Order Management

@@ -10,6 +10,10 @@ const fieldLabels: Record<string, string> = {
   'detail_pesanan.0.id_layanan': 'Layanan',
   'detail_pesanan.0.jumlah': 'Jumlah',
   'detail_pesanan.0.catatan': 'Catatan layanan',
+  cara_bayar: 'Cara bayar',
+  id_metode_pembayaran: 'Metode pembayaran',
+  jumlah_bayar: 'Jumlah bayar',
+  status_pembayaran: 'Status pembayaran',
   status_pesanan: 'Status',
 }
 

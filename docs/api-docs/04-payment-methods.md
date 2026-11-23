@@ -41,8 +41,8 @@ Jika token tidak valid atau tidak disertakan, API mengembalikan:
 | Role | View | Create | Update | Delete |
 |---|---|---|---|---|
 | Owner | ✓ | - | - | - |
-| Admin | ✓ | - | - | - |
-| Karyawan | ✓ | ✓ | ✓ | ✓ |
+| Admin | ✓ | ✓ | ✓ | ✓ |
+| Karyawan | ✓ | - | - | - |
 | Kurir | - | - | - | - |
 
 Permission yang digunakan:
@@ -80,6 +80,8 @@ Tabel database: `metode_pembayaran`
 | `kode` | VARCHAR(50) | Kode unik metode pembayaran |
 | `deskripsi` | TEXT | Deskripsi, nullable |
 | `is_active` | BOOLEAN | Status aktif |
+| `amount` | DECIMAL | Total nominal pembayaran `berhasil` 30 hari terakhir (0 kecuali `with_summary=true`) |
+| `transactions` | INTEGER | Jumlah transaksi `berhasil` 30 hari terakhir (0 kecuali `with_summary=true`) |
 | `created_at` | TIMESTAMP | Waktu dibuat |
 | `updated_at` | TIMESTAMP | Waktu diperbarui |
 
@@ -92,12 +94,17 @@ Contoh data:
     "kode": "tunai",
     "deskripsi": "Pembayaran secara langsung menggunakan uang tunai.",
     "is_active": true,
+    "amount": 0,
+    "transactions": 0,
     "created_at": "2026-11-16T13:21:37.000000Z",
     "updated_at": "2026-11-16T13:21:37.000000Z"
 }
 ```
 
-Catatan: Field `id` pada respons API merupakan representasi dari `id_metode_pembayaran` pada database.
+Catatan:
+
+- Field `id` pada respons API merupakan representasi dari `id_metode_pembayaran` pada database.
+- `amount` dan `transactions` selalu ada pada respons, tetapi bernilai `0` kecuali request memakai `with_summary=true`.
 
 ---
 
@@ -119,13 +126,24 @@ GET /payment-methods
 |---|---|---|---|
 | `search` | string | Tidak | Pencarian nama atau kode |
 | `is_active` | boolean | Tidak | Filter status aktif |
+| `with_summary` | boolean | Tidak | Jika `true`, hitung `amount` dan `transactions` dari pembayaran `berhasil` 30 hari terakhir |
 | `per_page` | integer | Tidak | Jumlah data per halaman |
 | `page` | integer | Tidak | Nomor halaman |
+
+`with_summary=true` dipakai dashboard untuk menampilkan ringkasan nominal dan
+jumlah transaksi per metode pembayaran. Tanpa parameter ini, `amount` dan
+`transactions` bernilai `0`.
 
 **Contoh Request**
 
 ```http
 GET /payment-methods?search=bank&is_active=1&per_page=10&page=1
+```
+
+**Contoh Request — Dengan Ringkasan**
+
+```http
+GET /payment-methods?with_summary=true&per_page=100
 ```
 
 **Contoh Response — HTTP 200**
@@ -139,6 +157,8 @@ GET /payment-methods?search=bank&is_active=1&per_page=10&page=1
             "kode": "transfer_bank",
             "deskripsi": "Pembayaran melalui transfer rekening bank.",
             "is_active": true,
+            "amount": 250000,
+            "transactions": 5,
             "created_at": "2026-11-16T13:21:37.000000Z",
             "updated_at": "2026-11-16T13:21:37.000000Z"
         }
@@ -203,6 +223,8 @@ POST /payment-methods
         "kode": "ewallet",
         "deskripsi": "Pembayaran menggunakan dompet digital.",
         "is_active": true,
+        "amount": 0,
+        "transactions": 0,
         "created_at": "2026-11-17T13:00:00.000000Z",
         "updated_at": "2026-11-17T13:00:00.000000Z"
     }
@@ -235,6 +257,8 @@ GET /payment-methods/1
         "kode": "tunai",
         "deskripsi": "Pembayaran secara langsung menggunakan uang tunai.",
         "is_active": true,
+        "amount": 0,
+        "transactions": 0,
         "created_at": "2026-11-16T13:21:37.000000Z",
         "updated_at": "2026-11-16T13:21:37.000000Z"
     }
@@ -277,6 +301,8 @@ Semua field bersifat opsional, tetapi jika dikirim harus memenuhi validasi.
         "kode": "transfer_bca",
         "deskripsi": "Pembayaran melalui transfer rekening BCA.",
         "is_active": true,
+        "amount": 0,
+        "transactions": 0,
         "created_at": "2026-11-16T13:21:37.000000Z",
         "updated_at": "2026-11-17T13:00:00.000000Z"
     }
@@ -320,6 +346,8 @@ Untuk mengaktifkan kembali:
         "kode": "tunai",
         "deskripsi": "Pembayaran secara langsung menggunakan uang tunai.",
         "is_active": false,
+        "amount": 0,
+        "transactions": 0,
         "created_at": "2026-11-16T13:21:37.000000Z",
         "updated_at": "2026-11-17T13:00:00.000000Z"
     }
@@ -417,7 +445,8 @@ Contoh ketika kode metode pembayaran sudah digunakan:
 6. Metode pembayaran yang sudah digunakan dalam transaksi tidak dapat dihapus.
 7. Metode pembayaran yang sudah digunakan sebaiknya dinonaktifkan jika tidak lagi digunakan.
 8. Karyawan hanya memiliki akses untuk melihat metode pembayaran.
-9. Owner dan Admin memiliki akses penuh terhadap manajemen metode pembayaran.
+9. Admin memiliki akses penuh terhadap manajemen metode pembayaran; Owner hanya dapat melihat.
+10. `amount` dan `transactions` mengikuti pembayaran berstatus `berhasil` dalam 30 hari terakhir dan hanya dihitung saat `with_summary=true`.
 
 ---
 
@@ -430,6 +459,7 @@ Frontend dapat menggunakan endpoint berikut untuk setiap kebutuhan:
 | Menampilkan tabel | `GET /payment-methods` |
 | Pencarian | `GET /payment-methods?search=...` |
 | Filter status | `GET /payment-methods?is_active=1` |
+| Ringkasan per metode (30 hari) | `GET /payment-methods?with_summary=true` |
 | Tambah data | `POST /payment-methods` |
 | Detail data | `GET /payment-methods/{id}` |
 | Edit data | `PUT /payment-methods/{id}` |

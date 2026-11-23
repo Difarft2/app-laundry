@@ -34,10 +34,10 @@ role dan permission terbaru.
 | Pengguna | Kelola | Lihat | Tidak | Tidak |
 | Layanan | Lihat | Lihat | Kelola | Tidak |
 | Waktu layanan | Lihat | Lihat | Kelola | Tidak |
-| Metode pembayaran | Lihat | Lihat | Kelola | Tidak |
+| Metode pembayaran | Lihat | Kelola | Lihat | Tidak |
 | Pesanan | Lihat, ubah status, hapus | Lihat | **Buat**, ubah, ubah status | Tidak |
-| Pembayaran | Lihat, catat | Lihat | Lihat, catat | Tidak |
-| Proses laundry | Lihat, ubah | Lihat | Kelola | Tidak |
+| Pembayaran | Lihat | Lihat | Lihat, catat | Tidak |
+| Proses laundry | Tidak | Lihat | Kelola | Tidak |
 | Antar-jemput | Lihat, tugaskan | Lihat | Lihat | **Kelola** |
 | Laporan | Ya | Ya | Tidak | Tidak |
 | Pengaturan dan role | Ya | Tidak | Tidak | Tidak |
@@ -45,9 +45,12 @@ role dan permission terbaru.
 Aturan utama:
 
 -   **Hanya karyawan** yang memiliki permission `orders.create` (membuat
-    pesanan).
--   **Admin bersifat read-only**: seluruh permission yang dimiliki hanya
-    `*.view`, tanpa create/update/delete/status/assign.
+    pesanan) dan `payments.create` (mencatat pembayaran).
+-   **Admin bersifat read-only untuk pesanan dan pembayaran**: hanya memiliki
+    `orders.view` dan `payments.view`.
+-   **Owner tidak dapat membuat atau mengubah data pesanan**, tetapi dapat
+    melihat, mengubah status, dan menghapus pesanan. Untuk pembayaran, owner
+    hanya dapat melihat riwayat (tanpa mencatat).
 -   **Owner tidak dapat membuat pesanan** dan tidak dapat menambah, mengubah,
     atau menghapus layanan, waktu layanan, serta metode pembayaran. Owner
     tetap dapat mengelola akun pengguna, memantau transaksi, dan melihat
@@ -56,9 +59,10 @@ Aturan utama:
     `delivery.update`), tanpa akses ke pesanan laundry, pembayaran, layanan,
     pengguna, atau laporan.
 
-Role `admin` sengaja tidak memiliki permission mutasi apa pun. Role `owner`
-tidak lagi memiliki seluruh permission; pembatasan owner diatur eksplisit di
-`RolePermissionSeeder`.
+Role `admin` tidak memiliki permission mutasi pesanan/pembayaran (read-only),
+tetapi tetap dapat mengelola master data layanan, waktu layanan, dan metode
+pembayaran. Role `owner` tidak memiliki seluruh permission; pembatasan owner
+diatur eksplisit di `RolePermissionSeeder`.
 
 ## 3. Tampilan dashboard per role
 
@@ -74,12 +78,12 @@ role, sehingga setiap akun hanya melihat tampilannya sendiri.
 
 ## 4. Menu sidebar per role
 
-- **Owner**: dashboard, riwayat pesanan, layanan, waktu layanan, pengguna, dan
-  laporan.
-- **Admin**: dashboard, riwayat pesanan, layanan, waktu layanan, pengguna, dan
-  laporan (semua read-only).
-- **Karyawan**: dashboard, pesanan, layanan, waktu layanan, pembayaran, proses
-  laundry, dan antar-jemput.
+- **Owner**: dashboard, riwayat pesanan, layanan, waktu layanan, metode
+  pembayaran, riwayat pembayaran, pengguna, dan laporan.
+- **Admin**: dashboard, riwayat pesanan, layanan, waktu layanan, metode
+  pembayaran, riwayat pembayaran, pengguna, dan laporan.
+- **Karyawan**: dashboard, pesanan, layanan, waktu layanan, metode pembayaran,
+  riwayat pembayaran, proses laundry, dan antar-jemput.
 - **Kurir**: dashboard dan antar-jemput.
 
 Menu yang halamannya belum dibuat tetap tampil sebagai penanda "Segera",

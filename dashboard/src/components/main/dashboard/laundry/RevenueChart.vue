@@ -1,23 +1,60 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import type { ApexOptions } from 'apexcharts'
 import VueApexCharts from 'vue3-apexcharts'
 import { useTheme } from '@/composables/useTheme'
 import { cn } from '@/utils/cn'
+import { fetchRevenuePeriod, type RevenuePeriod } from '@/services/dashboard'
+import { normalizeApiError } from '@/services/http'
 import { formatCompactCurrency, formatCurrency, formatNumber } from '@/utils/format'
-import { orderTotal, revenuePeriods, revenueTotal } from './data'
+import { revenuePeriods } from './data'
 import type { RevenuePeriodId } from './types'
 
 const { isDarkMode } = useTheme()
 
 const selectedPeriod = ref<RevenuePeriodId>('7d')
+const periodData = ref<RevenuePeriod | null>(null)
+const loading = ref(false)
+const loadError = ref<string | null>(null)
 
-const period = computed(
-  () => revenuePeriods.find((item) => item.id === selectedPeriod.value) ?? revenuePeriods[0],
+const emptyPeriod: RevenuePeriod = {
+  id: '7d',
+  label: '7 Hari',
+  categories: [],
+  orders: [],
+  revenue: [],
+}
+
+const loadPeriod = async (periodId: RevenuePeriodId) => {
+  loading.value = true
+  loadError.value = null
+
+  try {
+    periodData.value = await fetchRevenuePeriod(periodId)
+  } catch (error) {
+    loadError.value = normalizeApiError(error).message
+    periodData.value = { ...emptyPeriod, id: periodId }
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(selectedPeriod, (periodId) => {
+  void loadPeriod(periodId)
+})
+
+onMounted(() => {
+  void loadPeriod(selectedPeriod.value)
+})
+
+const period = computed(() => periodData.value ?? emptyPeriod)
+
+const totalRevenue = computed(() =>
+  period.value.revenue.reduce((total, value) => total + value, 0),
 )
-
-const totalRevenue = computed(() => revenueTotal(period.value))
-const totalOrders = computed(() => orderTotal(period.value))
+const totalOrders = computed(() =>
+  period.value.orders.reduce((total, value) => total + value, 0),
+)
 const averagePerOrder = computed(() =>
   totalOrders.value > 0 ? Math.round(totalRevenue.value / totalOrders.value) : 0,
 )
@@ -54,10 +91,7 @@ const options = computed<ApexOptions>(() => {
       },
     },
     dataLabels: { enabled: false },
-    markers: {
-      size: 0,
-      hover: { size: 5 },
-    },
+    markers: { size: 0, hover: { size: 5 } },
     legend: { show: false },
     grid: {
       borderColor: isDarkMode.value ? '#1E2640' : '#F2F4F7',
@@ -116,6 +150,7 @@ const options = computed<ApexOptions>(() => {
         const category = w.globals?.categoryLabels?.[dataPointIndex] ?? ''
         const revenue = chartSeries[0]?.[dataPointIndex] ?? 0
         const orders = chartSeries[1]?.[dataPointIndex] ?? 0
+        const valueColor = isDarkMode.value ? '#FFFFFF' : '#1D2939'
 
         return `
           <div style="min-width: 180px; padding: 4px 2px;">
@@ -125,14 +160,14 @@ const options = computed<ApexOptions>(() => {
                 <span style="width: 6px; height: 6px; border-radius: 9999px; background: #465FFF;"></span>
                 <span style="font-size: 12px; color: #667085;">Pendapatan</span>
               </span>
-              <span style="font-size: 12px; font-weight: 600; color: ${isDarkMode.value ? '#FFFFFF' : '#1D2939'};">${formatCurrency(revenue)}</span>
+              <span style="font-size: 12px; font-weight: 600; color: ${valueColor};">${formatCurrency(revenue)}</span>
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
               <span style="display: flex; align-items: center; gap: 6px;">
                 <span style="width: 6px; height: 6px; border-radius: 9999px; background: #12B76A;"></span>
                 <span style="font-size: 12px; color: #667085;">Transaksi</span>
               </span>
-              <span style="font-size: 12px; font-weight: 600; color: ${isDarkMode.value ? '#FFFFFF' : '#1D2939'};">${formatNumber(orders)}</span>
+              <span style="font-size: 12px; font-weight: 600; color: ${valueColor};">${formatNumber(orders)}</span>
             </div>
           </div>
         `
@@ -166,9 +201,10 @@ const options = computed<ApexOptions>(() => {
           :key="item.id"
           type="button"
           :aria-pressed="selectedPeriod === item.id"
+          :disabled="loading"
           :class="
             cn(
-              'rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors',
+              'rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-60',
               selectedPeriod === item.id
                 ? 'bg-white text-gray-800 shadow-theme-xs dark:bg-gray-800 dark:text-white'
                 : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white',
@@ -180,6 +216,13 @@ const options = computed<ApexOptions>(() => {
         </button>
       </div>
     </div>
+
+    <p v-if="loadError" class="mt-3 text-xs text-error-500">
+      {{ loadError }}
+      <button type="button" class="font-medium underline" @click="loadPeriod(selectedPeriod)">
+        Muat ulang
+      </button>
+    </p>
 
     <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
       <div class="rounded-xl bg-gray-50 px-4 py-3 dark:bg-white/3">

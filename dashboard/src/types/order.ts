@@ -1,4 +1,5 @@
 import type { PaginationLinks, PaginationMeta } from './auth'
+import type { Payment } from './payment'
 
 export type OrderStatus = 'menunggu' | 'diproses' | 'siap_diambil' | 'dalam_pengantaran' | 'selesai' | 'dibatalkan'
 
@@ -49,6 +50,7 @@ export interface Order {
   total_terbayar: number
   sisa_pembayaran: number
   catatan: string | null
+  pembayaran?: Payment[]
   detail_pesanan?: OrderDetail[]
   riwayat_status?: OrderStatusHistory[]
   created_at: string
@@ -84,6 +86,10 @@ export interface CreateOrderPayload {
   diskon?: number
   catatan?: string | null
   detail_pesanan: CreateOrderDetailPayload[]
+  cara_bayar?: string
+  id_metode_pembayaran?: number | null
+  jumlah_bayar?: number | null
+  status_pembayaran?: string
 }
 
 export interface UpdateOrderStatusPayload {

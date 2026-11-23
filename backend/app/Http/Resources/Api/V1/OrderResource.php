@@ -42,6 +42,13 @@ class OrderResource extends JsonResource
 
             'catatan' => $this->catatan,
 
+            'pembayaran' => $this->whenLoaded(
+                'pembayaran',
+                fn () => PaymentResource::collection(
+                    $this->pembayaran->sortByDesc('tanggal_pembayaran')->values()
+                )
+            ),
+
             'detail_pesanan' => $this->whenLoaded(
                 'detailPesanan',
                 fn () => $this->detailPesanan->map(fn ($detail) => [

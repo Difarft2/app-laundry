@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
+import PaymentHistoryList from '@/components/main/payments/PaymentHistoryList.vue'
+import RecordPaymentDialog from '@/components/main/payments/RecordPaymentDialog.vue'
 import DeleteOrderDialog from '@/components/main/orders/DeleteOrderDialog.vue'
 import UpdateOrderStatusDialog from '@/components/main/orders/UpdateOrderStatusDialog.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowLeftIcon, LoaderCircleIcon, PencilIcon, TrashBinIcon } from '@/icons/layout'
+import { ArrowLeftIcon, DollarIcon, LoaderCircleIcon, PencilIcon, TrashBinIcon } from '@/icons/layout'
 import { orderStatusColor, orderStatusLabel } from '@/constants/orders'
 import { normalizeApiError } from '@/services/http'
 import { ordersApi } from '@/services/orders'
@@ -26,11 +28,13 @@ const successMessage = ref<string | null>(null)
 
 const statusOpen = ref(false)
 const deleteOpen = ref(false)
+const paymentOpen = ref(false)
 
 const orderId = computed(() => Number(route.params.id))
 
 const canUpdateStatus = computed(() => auth.hasPermission('orders.update-status'))
 const canDelete = computed(() => auth.hasPermission('orders.delete'))
+const canRecordPayment = computed(() => auth.hasPermission('payments.create'))
 
 const processStatusLabels: Record<string, string> = {
   menunggu: 'Menunggu pengerjaan',
@@ -86,6 +90,11 @@ const handleUpdated = async (message: string) => {
 
 const handleDeleted = async (message: string) => {
   await router.push({ name: 'Orders', query: { deleted: message } })
+}
+
+const handlePaymentSaved = async (message: string) => {
+  successMessage.value = message
+  await load()
 }
 </script>
 
@@ -147,6 +156,14 @@ const handleDeleted = async (message: string) => {
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
+              <Button
+                v-if="canRecordPayment && order.sisa_pembayaran > 0 && order.status_pesanan !== 'dibatalkan'"
+                size="sm"
+                @click="paymentOpen = true"
+              >
+                <DollarIcon class="size-4" />
+                Catat pembayaran
+              </Button>
               <Button v-if="canUpdateStatus" variant="outline" size="sm" @click="statusOpen = true">
                 <PencilIcon class="size-4" />
                 Ubah status
@@ -245,6 +262,30 @@ const handleDeleted = async (message: string) => {
               Status pembayaran terpisah dari status pesanan dan proses laundry.
             </p>
           </div>
+        </div>
+
+        <!-- Riwayat pembayaran -->
+        <div
+          class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3"
+        >
+          <div
+            class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-5 py-4 lg:px-6 dark:border-gray-800"
+          >
+            <div>
+              <h4 class="text-sm font-semibold text-gray-800 dark:text-white/90">Riwayat pembayaran</h4>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                Catatan pembayaran untuk nota ini, termasuk DP dan pelunasan.
+              </p>
+            </div>
+            <RouterLink
+              to="/payments"
+              class="text-xs font-medium text-brand-500 hover:underline dark:text-brand-400"
+            >
+              Lihat semua pembayaran
+            </RouterLink>
+          </div>
+
+          <PaymentHistoryList :payments="order.pembayaran ?? []" />
         </div>
 
         <!-- Detail layanan -->
@@ -359,5 +400,11 @@ const handleDeleted = async (message: string) => {
     />
 
     <DeleteOrderDialog v-model:open="deleteOpen" :order="order" @deleted="handleDeleted" />
+
+    <RecordPaymentDialog
+      v-model:open="paymentOpen"
+      :order="order"
+      @saved="handlePaymentSaved"
+    />
   </AdminLayout>
 </template>

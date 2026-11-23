@@ -15,6 +15,16 @@ class PaymentMethodResource extends JsonResource
             'kode' => $this->kode,
             'deskripsi' => $this->deskripsi,
             'is_active' => $this->is_active,
+            'amount' => $this->whenLoaded(
+                'pembayaran',
+                fn () => (float) $this->pembayaran->sum('jumlah_bayar'),
+                0,
+            ),
+            'transactions' => $this->whenLoaded(
+                'pembayaran',
+                fn () => $this->pembayaran->count(),
+                0,
+            ),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
