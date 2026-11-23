@@ -15,7 +15,7 @@ Kumpulan dokumentasi REST API Pemuda Laundry.
 | 02 | [User Management](./02-user-management.md) | Pengelolaan pengguna |
 | 03 | [Service Management](./03-service-management.md) | Layanan dan waktu layanan |
 | 04 | [Payment Methods](./04-payment-methods.md) | Metode pembayaran + ringkasan 30 hari |
-| 05 | [Orders API](./05-orders-api.md) | Pesanan, estimasi selesai, pembayaran saat create |
+| 05 | [Orders API](./05-orders-api.md) | Pesanan, estimasi selesai, pembayaran saat create, lookup QR, cetak PDF, alur status laundry |
 | 06 | [Antar-Jemput API](./06-antar-jemput-api.md) | Tugas antar-jemput dan penugasan kurir |
 | 07 | [Payments API](./07-payments.md) | Riwayat & pencatatan pembayaran (DP/angsuran/pelunasan) |
 
