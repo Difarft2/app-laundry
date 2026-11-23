@@ -32,7 +32,7 @@ Token diperoleh melalui endpoint login.
 
 | Role | Permission |
 |---|---|
-| Owner | Melihat, mengubah, mengubah status, dan menghapus pesanan. **Tidak dapat membuat pesanan.** |
+| Owner | Hanya melihat daftar/detail pesanan (read-only). |
 | Admin | Hanya melihat daftar/detail pesanan (read-only). |
 | Karyawan | Melihat, **membuat**, mengubah, dan mengubah status pesanan. |
 | Kurir | Tidak memiliki akses Orders. |
@@ -42,8 +42,13 @@ Daftar permission:
 - `orders.view`
 - `orders.create`
 - `orders.update`
-- `orders.delete`
 - `orders.update-status`
+- `orders.delete`
+
+> Catatan: permission `orders.delete` tersedia, tetapi tidak diberikan ke role
+> default mana pun pada `RolePermissionSeeder`. Owner dan admin bersifat
+> read-only; hanya karyawan yang melakukan mutasi pesanan. Endpoint pembayaran
+> terkait pesanan dijelaskan pada dokumen **Payments API** (`06-payments.md`).
 
 ## 4. Endpoint Summary
 
@@ -73,15 +78,16 @@ GET /orders
 | Parameter | Tipe | Keterangan |
 |---|---|---|
 | `search` | string | Pencarian berdasarkan kode pesanan, nama pelanggan, atau nomor HP |
-| `status` | string | Filter berdasarkan status pesanan |
+| `status_pesanan` | string | Filter berdasarkan status pesanan |
 | `tanggal_mulai` | date | Filter tanggal masuk mulai |
 | `tanggal_selesai` | date | Filter tanggal masuk sampai |
 | `per_page` | integer | Jumlah data per halaman, maksimal 100 |
+| `page` | integer | Nomor halaman |
 
 **Contoh Request**
 
 ```http
-GET /orders?search=Budi&status=menunggu&per_page=10
+GET /orders?search=Budi&status_pesanan=menunggu&per_page=10
 ```
 
 **Status Pesanan**
@@ -117,7 +123,8 @@ GET /orders?search=Budi&status=menunggu&per_page=10
             "total_harga": "21000.00",
             "total_terbayar": "0.00",
             "sisa_pembayaran": "21000.00",
-            "catatan": "Tes pesanan API"
+            "catatan": "Tes pesanan API",
+            "pembayaran": []
         }
     ],
     "links": {},
@@ -126,6 +133,12 @@ GET /orders?search=Budi&status=menunggu&per_page=10
 ```
 
 `links` dan `meta` merupakan informasi pagination dari Laravel Resource Collection. Nilainya mengikuti hasil pagination.
+
+Catatan:
+
+- `estimasi_selesai` dihitung otomatis oleh backend dari durasi layanan dan dapat bernilai `null` jika layanan tidak memiliki durasi. Lihat bagian 6.
+- `pembayaran` berisi riwayat pembayaran (terbaru lebih dahulu). Detail bentuknya dijelaskan pada dokumen **Payments API**.
+- `total_terbayar` dan `sisa_pembayaran` hanya menghitung pembayaran berstatus `berhasil`.
 
 ---
 
@@ -155,6 +168,14 @@ POST /orders
 | `detail_pesanan.*.id_layanan` | integer | Ya | ID layanan aktif |
 | `detail_pesanan.*.jumlah` | numeric | Ya | Berat atau jumlah layanan |
 | `detail_pesanan.*.catatan` | string/null | Tidak | Catatan detail layanan |
+| `cara_bayar` | string | Tidak | `now` (bayar sekarang) atau `later` (bayar nanti). Default `later` |
+| `id_metode_pembayaran` | integer | Wajib jika `cara_bayar=now` | ID metode pembayaran aktif |
+| `jumlah_bayar` | numeric | Wajib jika `cara_bayar=now` | Nominal pembayaran awal, harus > 0 |
+| `status_pembayaran` | string | Tidak | `pending` atau `berhasil`. `pending` disimpan sebagai `menunggu` |
+
+> Pembayaran pada pembuatan pesanan **hanya** disimpan ke tabel `pembayaran`,
+> tidak ke tabel `pesanan`. Jika `cara_bayar` tidak dikirim, pesanan dianggap
+> **bayar nanti** dan pembayaran dicatat belakangan melalui `POST /payments`.
 
 **Contoh Request**
 
@@ -166,6 +187,7 @@ POST /orders
     "tanggal_masuk": "2026-11-18 19:00:00",
     "diskon": 0,
     "catatan": "Pisahkan pakaian putih",
+    "cara_bayar": "later",
     "detail_pesanan": [
         {
             "id_layanan": 1,
@@ -180,6 +202,48 @@ POST /orders
     ]
 }
 ```
+
+**Contoh Request — Bayar Sekarang**
+
+```json
+{
+    "nama_pelanggan": "Budi",
+    "no_hp": "081234567890",
+    "alamat": "Tuban",
+    "tanggal_masuk": "2026-11-18 19:00:00",
+    "cara_bayar": "now",
+    "id_metode_pembayaran": 1,
+    "jumlah_bayar": 31000,
+    "status_pembayaran": "berhasil",
+    "detail_pesanan": [
+        {
+            "id_layanan": 1,
+            "jumlah": 3,
+            "catatan": "Pakaian sehari-hari"
+        }
+    ]
+}
+```
+
+Ketentuan pembayaran saat create:
+
+- `jenis_pembayaran` ditentukan otomatis: `pelunasan` jika `jumlah_bayar`
+  lebih besar atau sama dengan total harga, selain itu `dp`.
+- `status_pembayaran = pending` diubah backend menjadi `menunggu`;
+  `berhasil` tetap `berhasil`.
+- Metode pembayaran harus aktif.
+
+**Estimasi Selesai Otomatis**
+
+`estimasi_selesai` tidak dikirim frontend dan tidak disimpan sebagai input
+bebas. Backend menghitungnya dari durasi layanan:
+
+1. Ambil `waktu_layanan.estimasi_max_jam` setiap layanan; jika kosong gunakan
+   `estimasi_min_jam`.
+2. Ambil nilai terbesar di antara layanan (durasi terlama).
+3. Tambahkan durasi tersebut ke `tanggal_masuk`.
+
+Jika tidak ada layanan yang memiliki durasi, `estimasi_selesai` bernilai `null`.
 
 **Contoh Response — 201 Created**
 
@@ -203,23 +267,26 @@ POST /orders
         "total_terbayar": "0.00",
         "sisa_pembayaran": "31000.00",
         "catatan": "Pisahkan pakaian putih",
+        "pembayaran": [],
         "detail_pesanan": [],
         "riwayat_status": []
     }
 }
 ```
 
-Data `detail_pesanan` dan `riwayat_status` pada response sebenarnya akan berisi data hasil pembuatan pesanan. Struktur lengkapnya dijelaskan pada bagian detail pesanan dan riwayat status.
+Data `detail_pesanan`, `pembayaran`, dan `riwayat_status` pada response sebenarnya akan berisi data hasil pembuatan pesanan. Struktur lengkapnya dijelaskan pada bagian detail pesanan dan riwayat status.
 
 **Proses otomatis ketika pesanan dibuat:**
 
 1. Backend memvalidasi pelanggan dan detail layanan.
 2. Backend mengambil harga layanan dari database.
-3. Backend menghitung subtotal, diskon, dan total harga.
-4. Backend membuat data pesanan.
-5. Backend membuat detail pesanan.
-6. Backend membuat proses laundry dengan status awal `menunggu` untuk setiap detail.
-7. Backend mencatat riwayat status awal pesanan.
+3. Backend menghitung `estimasi_selesai` dari durasi layanan.
+4. Backend menghitung subtotal, diskon, dan total harga.
+5. Backend membuat data pesanan.
+6. Backend membuat detail pesanan.
+7. Backend membuat proses laundry dengan status awal `menunggu` untuk setiap detail.
+8. Jika `cara_bayar = now`, backend membuat data pembayaran di tabel `pembayaran`.
+9. Backend mencatat riwayat status awal pesanan.
 
 Semua proses penyimpanan dilakukan menggunakan database transaction.
 
@@ -251,6 +318,7 @@ GET /orders/1
 - Status pesanan.
 - Rincian harga.
 - Total pembayaran dan sisa pembayaran.
+- Riwayat pembayaran (`pembayaran`).
 - Detail layanan.
 - Proses laundry setiap detail.
 - Riwayat perubahan status pesanan.
@@ -268,6 +336,32 @@ GET /orders/1
 | `subtotal` | Total harga detail |
 | `catatan` | Catatan detail |
 | `proses_laundry` | Informasi proses laundry |
+
+**Struktur Riwayat Pembayaran**
+
+Field `pembayaran` berisi array pembayaran terurut dari `tanggal_pembayaran`
+terbaru.
+
+| Field | Keterangan |
+|---|---|
+| `id_pembayaran` | ID pembayaran |
+| `kode_pembayaran` | Kode unik pembayaran |
+| `id_pesanan` | ID pesanan terkait |
+| `kode_pesanan` | Kode pesanan |
+| `nama_pelanggan` | Nama pelanggan |
+| `id_metode_pembayaran` | ID metode pembayaran |
+| `nama_metode` | Nama metode pembayaran |
+| `kode_metode` | Kode metode pembayaran |
+| `id_user` | ID pengguna yang mencatat |
+| `nama_user` | Nama pengguna yang mencatat |
+| `jumlah_bayar` | Nominal pembayaran |
+| `jenis_pembayaran` | `dp`, `angsuran`, atau `pelunasan` |
+| `status_pembayaran` | `berhasil`, `menunggu`, atau `dibatalkan` |
+| `tanggal_pembayaran` | Waktu pembayaran |
+| `catatan` | Catatan pembayaran |
+
+Struktur lengkap dan endpoint pembayaran dijelaskan pada dokumen
+**Payments API** (`06-payments.md`).
 
 ---
 
@@ -319,6 +413,7 @@ Contoh mengubah detail layanan:
 - Harga layanan selalu diambil dari database.
 - Total pembayaran yang sudah tercatat tidak boleh melebihi total harga baru.
 - Diskon tidak boleh melebihi subtotal.
+- Jika `tanggal_masuk` atau `detail_pesanan` berubah, `estimasi_selesai` dihitung ulang otomatis oleh backend.
 
 ---
 
@@ -404,9 +499,13 @@ Jika memenuhi ketentuan, pesanan dapat dihapus beserta detail dan data proses te
 | 7 | Layanan satuan | Jumlah harus berupa bilangan bulat |
 | 8 | Cuci Basah | Minimal 5 kg |
 | 9 | Kering Saja | Minimal 5 kg |
-| 10 | Pembayaran | Total pembayaran tidak boleh melebihi total tagihan |
+| 10 | Pembayaran | Total pembayaran berstatus `berhasil` tidak boleh melebihi total tagihan |
 | 11 | Status awal | `menunggu` |
 | 12 | Proses laundry awal | `menunggu` |
+| 13 | Estimasi selesai | Dihitung otomatis dari durasi layanan (jam) dan `tanggal_masuk` |
+| 14 | Penyimpanan pembayaran | Hanya di tabel `pembayaran`, bukan di tabel `pesanan` |
+| 15 | Pelunasan | Nominal harus sama dengan sisa tagihan |
+| 16 | Sumber kebenaran | Frontend menampilkan hasil hitung backend, bukan menghitung sendiri |
 
 ### Status Proses Laundry
 
@@ -486,6 +585,9 @@ Frontend harus memperhatikan hal-hal berikut:
 5. Pisahkan status pesanan, status pembayaran, dan status proses laundry.
 6. Gunakan `id_pesanan` untuk mengambil detail pesanan.
 7. Jangan menganggap pesanan selesai hanya karena proses laundry selesai; status pesanan memiliki alur tersendiri.
+8. Tampilkan `estimasi_selesai` dari backend; jangan menghitung sendiri dari durasi layanan.
+9. Gunakan `sisa_pembayaran` dari backend untuk memutuskan apakah tombol **Catat pembayaran** perlu ditampilkan.
+10. Gunakan `pembayaran` dari detail pesanan sebagai sumber riwayat pembayaran; endpoint pembayaran dijelaskan pada dokumen **Payments API**.
 
 ---
 
