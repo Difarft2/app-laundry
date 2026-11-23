@@ -13,9 +13,9 @@ import {
 import { CheckCircleIcon, LoaderCircleIcon, PrinterIcon } from '@/icons/layout'
 import { orderStatusColor, orderStatusLabel } from '@/constants/orders'
 import { normalizeApiError } from '@/services/http'
-import { ordersApi } from '@/services/orders'
 import type { Order } from '@/types/order'
 import { formatCurrency, formatDateTime } from '@/utils/format'
+import { printOrderPdf } from '@/utils/order-pdf'
 
 const props = defineProps<{
   open: boolean
@@ -37,19 +37,7 @@ const printOrder = async () => {
   printError.value = null
 
   try {
-    const blob = await ordersApi.pdf(order.id_pesanan)
-    const url = URL.createObjectURL(blob)
-    const tab = window.open(url, '_blank')
-
-    if (!tab) {
-      // Pop-up diblokir: fallback ke unduhan langsung.
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `pesanan-${order.kode_pesanan}.pdf`
-      link.click()
-    }
-
-    window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    await printOrderPdf(order)
   } catch (error) {
     printError.value = normalizeApiError(error).message
   } finally {

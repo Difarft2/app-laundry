@@ -600,7 +600,9 @@ Frontend harus memperhatikan hal-hal berikut:
 8. Tampilkan `estimasi_selesai` dari backend; jangan menghitung sendiri dari durasi layanan.
 9. Gunakan `sisa_pembayaran` dari backend untuk memutuskan apakah tombol **Catat pembayaran** perlu ditampilkan.
 10. Gunakan `pembayaran` dari detail pesanan sebagai sumber riwayat pembayaran; endpoint pembayaran dijelaskan pada dokumen **Payments API**.
-11. Setelah create berhasil, tampilkan dialog sukses dengan tombol cetak PDF pesanan.
+11. Tombol cetak PDF pesanan tersedia di dialog sukses create, menu aksi baris
+    daftar pesanan, dan halaman detail pesanan. Ketiganya memakai endpoint
+    `GET /orders/{order}/pdf`.
 12. Untuk scan QR, gunakan `GET /orders/lookup`; QR berisi `kode_pesanan` (bukan URL).
 
 ---

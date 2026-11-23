@@ -44,6 +44,7 @@ import {
   LoaderCircleIcon,
   PencilIcon,
   PlusIcon,
+  PrinterIcon,
   SearchIcon,
   TrashBinIcon,
   XIcon,
@@ -51,6 +52,7 @@ import {
 import { normalizeApiError } from '@/services/http'
 import { ordersApi } from '@/services/orders'
 import { useAuthStore } from '@/stores/auth'
+import { printOrderPdf } from '@/utils/order-pdf'
 import type { PaginationMeta } from '@/types/auth'
 import type { Order, OrderStatus } from '@/types/order'
 import { formatCurrency } from '@/utils/format'
@@ -179,6 +181,16 @@ const openDelete = (order: Order) => {
 const openPayment = (order: Order) => {
   paymentTarget.value = order
   paymentOpen.value = true
+}
+
+const printOrder = async (order: Order) => {
+  loadError.value = null
+
+  try {
+    await printOrderPdf(order)
+  } catch (error) {
+    loadError.value = normalizeApiError(error).message
+  }
 }
 
 const handleSaved = async (message: string) => {
@@ -491,6 +503,11 @@ const remainingLabel = (order: Order): string =>
                           <DropdownMenuItem :to="`/orders/${order.id_pesanan}`">
                             <ArrowRightIcon class="size-5" />
                             Lihat detail
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem @select="printOrder(order)">
+                            <PrinterIcon class="size-5" />
+                            Cetak pesanan
                           </DropdownMenuItem>
 
                           <DropdownMenuItem
