@@ -131,7 +131,13 @@ Route::prefix('v1')->group(function () {
             Route::post('/', [OrderController::class, 'store'])
                 ->middleware('permission:orders.create');
 
+            Route::get('/lookup', [OrderController::class, 'lookup'])
+                ->middleware('permission:orders.view');
+
             Route::get('/{order}', [OrderController::class, 'show'])
+                ->middleware('permission:orders.view');
+
+            Route::get('/{order}/pdf', [OrderController::class, 'pdf'])
                 ->middleware('permission:orders.view');
 
             Route::put('/{order}', [OrderController::class, 'update'])

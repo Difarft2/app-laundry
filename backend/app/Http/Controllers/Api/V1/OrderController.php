@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Order\StoreOrderRequest;
 use App\Http\Requests\Api\V1\Order\UpdateOrderRequest;
@@ -9,6 +10,7 @@ use App\Http\Resources\Api\V1\OrderResource;
 use App\Models\Layanan;
 use App\Models\MetodePembayaran;
 use App\Models\Pesanan;
+use App\Services\OrderQrCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +20,20 @@ use Illuminate\Validation\Rule;
 
 class OrderController extends Controller
 {
+    /** Status yang diizinkan, termasuk tahapan proses laundry dari scan QR. */
+    private const ORDER_STATUSES = [
+        'menunggu',
+        'dicuci',
+        'dikeringkan',
+        'dilipat',
+        'disetrika',
+        'diproses',
+        'siap_diambil',
+        'dalam_pengantaran',
+        'selesai',
+        'dibatalkan',
+    ];
+
     /**
      * Hitung estimasi selesai dari durasi terlama yang dipilih.
      *
@@ -116,6 +132,53 @@ class OrderController extends Controller
         ]);
 
         return new OrderResource($order);
+    }
+
+    /**
+     * Cari pesanan berdasarkan kode yang tertanam pada QR.
+     */
+    public function lookup(Request $request)
+    {
+        $validated = $request->validate([
+            'kode_pesanan' => ['required', 'string', 'max:50'],
+        ]);
+
+        $kode = Str::upper(trim($validated['kode_pesanan']));
+
+        $order = $this->orderQuery()
+            ->where('kode_pesanan', $kode)
+            ->first();
+
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesanan dengan kode tersebut tidak ditemukan.',
+            ], 404);
+        }
+
+        return new OrderResource($order);
+    }
+
+    /**
+     * Cetak kartu pesanan sebagai PDF, lengkap dengan QR untuk update status.
+     */
+    public function pdf(Pesanan $order, OrderQrCode $qrCode)
+    {
+        $order->load([
+            'detailPesanan.layanan.waktuLayanan',
+            'detailPesanan.prosesLaundry',
+            'pembayaran',
+            'riwayatStatus.user',
+        ]);
+
+        $qrDataUri = $qrCode->dataUri($order->kode_pesanan);
+
+        $pdf = Pdf::loadView('orders.pdf', [
+            'order' => $order,
+            'qrCode' => $qrDataUri,
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->stream('pesanan-' . $order->kode_pesanan . '.pdf');
     }
 
     public function store(StoreOrderRequest $request)
@@ -477,14 +540,7 @@ class OrderController extends Controller
             'status_pesanan' => [
                 'required',
                 'string',
-                Rule::in([
-                    'menunggu',
-                    'diproses',
-                    'siap_diambil',
-                    'dalam_pengantaran',
-                    'selesai',
-                    'dibatalkan',
-                ]),
+                Rule::in(self::ORDER_STATUSES),
             ],
             'keterangan' => ['nullable', 'string'],
         ]);
