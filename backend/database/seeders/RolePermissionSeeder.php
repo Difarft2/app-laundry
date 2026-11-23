@@ -121,6 +121,7 @@ class RolePermissionSeeder extends Seeder
             'orders.update',
             'orders.update-status',
             'payments.view',
+            'payments.create',
             'laundry.view',
             'laundry.update',
             'delivery.view',

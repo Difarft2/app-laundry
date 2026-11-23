@@ -7,8 +7,10 @@ use App\Http\Requests\Api\V1\Order\StoreOrderRequest;
 use App\Http\Requests\Api\V1\Order\UpdateOrderRequest;
 use App\Http\Resources\Api\V1\OrderResource;
 use App\Models\Layanan;
+use App\Models\MetodePembayaran;
 use App\Models\Pesanan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -16,12 +18,51 @@ use Illuminate\Validation\Rule;
 
 class OrderController extends Controller
 {
+    /**
+     * Hitung estimasi selesai dari durasi terlama yang dipilih.
+     *
+     * Durasi layanan tersimpan dalam jam (estimasi_max_jam, fallback ke
+     * estimasi_min_jam). Estimasi dihitung dari tanggal masuk, sehingga
+     * nilai yang disimpan di database selalu konsisten dengan preview
+     * yang ditampilkan di form.
+     */
+    private function hitungEstimasiSelesai($layanans, $details, $tanggalMasuk): ?Carbon
+    {
+        $estimasiJam = collect($details)
+            ->map(function ($detail) use ($layanans) {
+                $idLayanan = is_array($detail)
+                    ? ($detail['id_layanan'] ?? null)
+                    : ($detail->id_layanan ?? null);
+
+                $waktu = $layanans->get($idLayanan)?->waktuLayanan;
+
+                if (!$waktu) {
+                    return null;
+                }
+
+                $max = (int) ($waktu->estimasi_max_jam ?? 0);
+                $min = (int) ($waktu->estimasi_min_jam ?? 0);
+
+                return $max > 0 ? $max : ($min > 0 ? $min : null);
+            })
+            ->filter(fn ($jam) => $jam !== null && $jam > 0)
+            ->max();
+
+        if (!$estimasiJam) {
+            return null;
+        }
+
+        return Carbon::parse($tanggalMasuk)->addHours((int) $estimasiJam);
+    }
+
     private function orderQuery()
     {
         return Pesanan::with([
             'detailPesanan.layanan.waktuLayanan',
             'detailPesanan.prosesLaundry.riwayatProses',
             'pembayaran',
+            'pembayaran.metodePembayaran',
+            'pembayaran.user',
             'riwayatStatus.user',
         ]);
     }
@@ -68,6 +109,8 @@ class OrderController extends Controller
             'detailPesanan.layanan.waktuLayanan',
             'detailPesanan.prosesLaundry.riwayatProses',
             'pembayaran',
+            'pembayaran.metodePembayaran',
+            'pembayaran.user',
             'riwayatStatus.user',
         ]);
 
@@ -85,7 +128,8 @@ class OrderController extends Controller
             ->unique()
             ->values();
 
-        $layanans = Layanan::whereIn('id_layanan', $layananIds)
+        $layanans = Layanan::with('waktuLayanan')
+            ->whereIn('id_layanan', $layananIds)
             ->where('is_active', true)
             ->get()
             ->keyBy('id_layanan');
@@ -96,6 +140,12 @@ class OrderController extends Controller
                 'message' => 'Terdapat layanan yang tidak aktif atau tidak ditemukan.',
             ], 422);
         }
+
+        $estimasiSelesai = $this->hitungEstimasiSelesai(
+            $layanans,
+            $details,
+            $validated['tanggal_masuk']
+        );
 
         $subtotal = 0;
 
@@ -115,12 +165,16 @@ class OrderController extends Controller
             ], 422);
         }
 
+        $caraBayar = $validated['cara_bayar'] ?? 'later';
+
         $order = DB::transaction(function () use (
             $validated,
             $details,
             $layanans,
+            $estimasiSelesai,
             $subtotal,
-            $diskon
+            $diskon,
+            $caraBayar
         ) {
             $order = Pesanan::create([
                 'id_user' => Auth::id(),
@@ -129,6 +183,7 @@ class OrderController extends Controller
                 'no_hp' => $validated['no_hp'],
                 'alamat' => $validated['alamat'] ?? null,
                 'tanggal_masuk' => $validated['tanggal_masuk'],
+                'estimasi_selesai' => $estimasiSelesai,
                 'status_pesanan' => 'menunggu',
                 'subtotal' => $subtotal,
                 'diskon' => $diskon,
@@ -157,6 +212,28 @@ class OrderController extends Controller
                 ]);
             }
 
+            if ($caraBayar === 'now') {
+                $metode = MetodePembayaran::find($validated['id_metode_pembayaran']);
+                $statusPembayaran = ($validated['status_pembayaran'] ?? 'pending') === 'berhasil'
+                    ? 'berhasil'
+                    : 'menunggu';
+                $jenisPembayaran = (float) $validated['jumlah_bayar'] >= (float) ($subtotal - $diskon)
+                    ? 'pelunasan'
+                    : 'dp';
+
+                $order->pembayaran()->create([
+                    'id_metode_pembayaran' => $validated['id_metode_pembayaran'],
+                    'id_user' => Auth::id(),
+                    'kode_pembayaran' => 'PAY-' . now()->format('Ymd') . '-' . Str::upper(Str::random(6)),
+                    'jumlah_bayar' => $validated['jumlah_bayar'],
+                    'jenis_pembayaran' => $jenisPembayaran,
+                    'status_pembayaran' => $statusPembayaran,
+                    'tanggal_pembayaran' => now(),
+                    'catatan' => 'Pembayaran via ' . ($metode?->nama_metode ?? '-')
+                        . ' atas pesanan ' . $order->kode_pesanan,
+                ]);
+            }
+
             $order->riwayatStatus()->create([
                 'id_user' => Auth::id(),
                 'status_sebelumnya' => null,
@@ -172,6 +249,8 @@ class OrderController extends Controller
             'detailPesanan.layanan.waktuLayanan',
             'detailPesanan.prosesLaundry',
             'pembayaran',
+            'pembayaran.metodePembayaran',
+            'pembayaran.user',
             'riwayatStatus.user',
         ]);
 
@@ -212,7 +291,8 @@ class OrderController extends Controller
                     ->unique()
                     ->values();
 
-                $layanans = Layanan::whereIn('id_layanan', $layananIds)
+                $layanans = Layanan::with('waktuLayanan')
+                    ->whereIn('id_layanan', $layananIds)
                     ->where('is_active', true)
                     ->get()
                     ->keyBy('id_layanan');
@@ -282,6 +362,20 @@ class OrderController extends Controller
                 ], 422);
             }
 
+            // Hitung ulang estimasi bila layanan dan/atau tanggal masuk berubah.
+            if (!$ubahDetail) {
+                $layanans = Layanan::with('waktuLayanan')
+                    ->whereIn('id_layanan', $order->detailPesanan->pluck('id_layanan'))
+                    ->get()
+                    ->keyBy('id_layanan');
+            }
+
+            $estimasiSelesai = $this->hitungEstimasiSelesai(
+                $layanans,
+                $detailData,
+                $validated['tanggal_masuk'] ?? $order->tanggal_masuk
+            );
+
             $order->update([
                 'nama_pelanggan' => $validated['nama_pelanggan'] ?? $order->nama_pelanggan,
                 'no_hp' => $validated['no_hp'] ?? $order->no_hp,
@@ -289,6 +383,7 @@ class OrderController extends Controller
                     ? $validated['alamat']
                     : $order->alamat,
                 'tanggal_masuk' => $validated['tanggal_masuk'] ?? $order->tanggal_masuk,
+                'estimasi_selesai' => $estimasiSelesai,
                 'subtotal' => $subtotal,
                 'diskon' => $diskon,
                 'total_harga' => $totalHarga,
@@ -326,6 +421,8 @@ class OrderController extends Controller
                 'detailPesanan.layanan.waktuLayanan',
                 'detailPesanan.prosesLaundry',
                 'pembayaran',
+                'pembayaran.metodePembayaran',
+                'pembayaran.user',
                 'riwayatStatus.user',
             ]);
 
@@ -432,6 +529,8 @@ class OrderController extends Controller
                 'detailPesanan.layanan.waktuLayanan',
                 'detailPesanan.prosesLaundry',
                 'pembayaran',
+                'pembayaran.metodePembayaran',
+                'pembayaran.user',
                 'riwayatStatus.user',
             ]);
 

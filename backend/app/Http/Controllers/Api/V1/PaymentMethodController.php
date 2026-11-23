@@ -16,6 +16,14 @@ class PaymentMethodController extends Controller
     {
         $query = MetodePembayaran::query();
 
+        if ($request->boolean('with_summary')) {
+            $query->with([
+                'pembayaran' => fn ($q) => $q
+                    ->where('status_pembayaran', 'berhasil')
+                    ->where('tanggal_pembayaran', '>=', now()->subDays(30)),
+            ]);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
 

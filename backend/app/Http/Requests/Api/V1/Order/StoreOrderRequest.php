@@ -38,6 +38,17 @@ class StoreOrderRequest extends FormRequest
                 'gt:0',
             ],
             'detail_pesanan.*.catatan' => ['nullable', 'string'],
+
+            // Opsi pembayaan: data pembayaran disimpan di tabel pembayaran,
+            // bukan di tabel pesanan.
+            'cara_bayar' => ['sometimes', 'string', Rule::in(['now', 'later'])],
+            'id_metode_pembayaran' => [
+                'nullable',
+                'integer',
+                'exists:metode_pembayaran,id_metode_pembayaran',
+            ],
+            'jumlah_bayar' => ['nullable', 'numeric', 'min:0'],
+            'status_pembayaran' => ['sometimes', 'string', Rule::in(['pending', 'berhasil'])],
         ];
     }
 
@@ -45,6 +56,24 @@ class StoreOrderRequest extends FormRequest
     {
         return [
             function (Validator $validator) {
+                if ($this->input('cara_bayar') === 'now') {
+                    if (!$this->filled('id_metode_pembayaran')) {
+                        $validator->errors()->add(
+                            'id_metode_pembayaran',
+                            'Metode pembayaran wajib dipilih saat bayar sekarang.'
+                        );
+                    }
+
+                    $jumlahBayar = $this->input('jumlah_bayar');
+
+                    if ($jumlahBayar === null || (float) $jumlahBayar <= 0) {
+                        $validator->errors()->add(
+                            'jumlah_bayar',
+                            'Jumlah bayar wajib lebih dari 0 saat bayar sekarang.'
+                        );
+                    }
+                }
+
                 foreach ($this->input('detail_pesanan', []) as $index => $detail) {
                     $layanan = Layanan::find($detail['id_layanan'] ?? null);
                     $jumlah = $detail['jumlah'] ?? null;
