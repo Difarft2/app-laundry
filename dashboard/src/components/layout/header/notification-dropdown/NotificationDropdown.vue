@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { Avatar, AvatarBadge, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -15,15 +15,26 @@ import { BellIcon, DotIcon, XIcon } from '@/icons/layout'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/utils/cn'
 import { getInitials } from '@/utils/get-initials'
-import { notifications } from './data'
+import { useDashboardStore } from '@/stores/dashboard'
+import { notificationsFromActivities } from './data'
 
+const dashboard = useDashboardStore()
+
+onMounted(() => {
+  void dashboard.load()
+})
+
+const notifications = computed(() =>
+  notificationsFromActivities(dashboard.data?.data.recent.activities ?? []),
+)
 const isOpen = ref(false)
-const notifying = ref(true)
+const hasUnseen = ref(true)
+const notifying = computed(() => hasUnseen.value && notifications.value.length > 0)
 
 const handleOpenChange = (open: boolean) => {
   isOpen.value = open
   if (open) {
-    notifying.value = false
+    hasUnseen.value = false
   }
 }
 </script>
@@ -75,7 +86,7 @@ const handleOpenChange = (open: boolean) => {
               class="flex items-start gap-3 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-white/5"
             >
               <Avatar size="default">
-                <AvatarImage :src="item.avatar" :alt="item.name" />
+                <AvatarImage v-if="item.avatar" :src="item.avatar" :alt="item.name" />
                 <AvatarFallback>{{ getInitials(item.name) }}</AvatarFallback>
                 <AvatarBadge :variant="item.status" />
               </Avatar>
@@ -100,6 +111,12 @@ const handleOpenChange = (open: boolean) => {
               class="my-0.5 bg-gray-100 last-of-type:hidden dark:bg-gray-700"
             />
           </template>
+          <p
+            v-if="notifications.length === 0"
+            class="py-10 text-center text-sm text-gray-500 dark:text-gray-400"
+          >
+            Belum ada aktivitas terbaru.
+          </p>
         </div>
       </ScrollArea>
 

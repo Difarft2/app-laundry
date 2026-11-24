@@ -16,13 +16,16 @@ Kumpulan dokumentasi REST API Pemuda Laundry.
 | 03 | [Service Management](./03-service-management.md) | Layanan dan waktu layanan |
 | 04 | [Payment Methods](./04-payment-methods.md) | Metode pembayaran + ringkasan 30 hari |
 | 05 | [Orders API](./05-orders-api.md) | Pesanan, estimasi selesai, pembayaran saat create, lookup QR, cetak struk PNG, alur status laundry |
-| 06 | [Antar-Jemput API](./06-antar-jemput-api.md) | Tugas antar-jemput dan penugasan kurir |
+| 06 | [Antar-Jemput API](./06-antar-jemput-api.md) | Antar dari pesanan, terima tugas kurir, dan penugasan antar-jemput |
 | 07 | [Payments API](./07-payments.md) | Riwayat & pencatatan pembayaran (DP/angsuran/pelunasan) |
+| 08 | [Dashboard API](./08-dashboard-api.md) | Data dashboard real per role (owner, admin, karyawan, kurir), grafik `7d`/`30d`/`month`, antrean, dan tugas kurir |
+| 09 | [Expenses API](./09-expenses-api.md) | Pengeluaran operasional (owner: kelola; admin: lihat) |
 
 ## Matriks Hak Akses Ringkas
 
 | Modul | Owner | Admin | Karyawan | Kurir |
 |---|---|---|---|---|
+| Dashboard (lihat, `dashboard.view`) | ✓ | ✓ | ✓ | ✓ (scope tugas saja) |
 | Pesanan (lihat) | ✓ | ✓ | ✓ | - |
 | Pesanan (buat/ubah data) | - | - | ✓ | - |
 | Pesanan (ubah status/hapus) | ✓ | - | ✓ | - |
@@ -30,10 +33,16 @@ Kumpulan dokumentasi REST API Pemuda Laundry.
 | Metode pembayaran (kelola) | - | ✓ | - | - |
 | Riwayat pembayaran (lihat) | ✓ | ✓ | ✓ | - |
 | Catat pembayaran | - | - | ✓ | - |
+| Pengeluaran (lihat, `finance.view`) | ✓ | ✓ | - | - |
+| Pengeluaran (catat/ubah/hapus, `finance.manage`) | ✓ | - | - | - |
 
 Hanya karyawan yang dapat membuat pesanan dan mencatat pembayaran. Admin
 read-only untuk pesanan dan pembayaran; owner dapat mengubah status/menghapus
-pesanan tetapi tidak membuat/mengubah data maupun mencatat pembayaran.
+pesanan tetapi tidak membuat/mengubah data maupun mencatat pembayaran. Owner
+adalah satu-satunya role yang dapat mencatat pengeluaran (`finance.manage`).
+
+Endpoint dashboard bersifat role-aware: backend yang menentukan scope data.
+Kurir tidak menerima data keuangan maupun daftar pesanan laundry.
 
 ## Catatan Umum
 

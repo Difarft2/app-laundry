@@ -1,53 +1,42 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted } from 'vue'
 import type { ApexOptions } from 'apexcharts'
 import VueApexCharts from 'vue3-apexcharts'
 import { useTheme } from '@/composables/useTheme'
+import { useDashboardStore } from '@/stores/dashboard'
 import { cn } from '@/utils/cn'
-import { fetchRevenuePeriod, type RevenuePeriod } from '@/services/dashboard'
-import { normalizeApiError } from '@/services/http'
+import type { RevenuePeriod } from '@/services/dashboard'
 import { formatCompactCurrency, formatCurrency, formatNumber } from '@/utils/format'
 import { revenuePeriods } from './data'
 import type { RevenuePeriodId } from './types'
 
 const { isDarkMode } = useTheme()
+const dashboard = useDashboardStore()
 
-const selectedPeriod = ref<RevenuePeriodId>('7d')
-const periodData = ref<RevenuePeriod | null>(null)
-const loading = ref(false)
-const loadError = ref<string | null>(null)
+const loading = computed(() => dashboard.loading)
+const loadError = computed(() => dashboard.error)
+const selectedPeriod = computed<RevenuePeriodId>({
+  get: () => dashboard.period,
+  set: (value) => {
+    void dashboard.load(value, true)
+  },
+})
 
 const emptyPeriod: RevenuePeriod = {
-  id: '7d',
-  label: '7 Hari',
   categories: [],
   orders: [],
   revenue: [],
 }
 
-const loadPeriod = async (periodId: RevenuePeriodId) => {
-  loading.value = true
-  loadError.value = null
+const period = computed<RevenuePeriod>(
+  () => dashboard.data?.data.charts.revenue ?? emptyPeriod,
+)
 
-  try {
-    periodData.value = await fetchRevenuePeriod(periodId)
-  } catch (error) {
-    loadError.value = normalizeApiError(error).message
-    periodData.value = { ...emptyPeriod, id: periodId }
-  } finally {
-    loading.value = false
-  }
-}
-
-watch(selectedPeriod, (periodId) => {
-  void loadPeriod(periodId)
-})
+const loadPeriod = () => dashboard.refresh()
 
 onMounted(() => {
-  void loadPeriod(selectedPeriod.value)
+  void dashboard.load()
 })
-
-const period = computed(() => periodData.value ?? emptyPeriod)
 
 const totalRevenue = computed(() =>
   period.value.revenue.reduce((total, value) => total + value, 0),
@@ -219,7 +208,7 @@ const options = computed<ApexOptions>(() => {
 
     <p v-if="loadError" class="mt-3 text-xs text-error-500">
       {{ loadError }}
-      <button type="button" class="font-medium underline" @click="loadPeriod(selectedPeriod)">
+      <button type="button" class="font-medium underline" @click="loadPeriod()">
         Muat ulang
       </button>
     </p>

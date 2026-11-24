@@ -2,8 +2,14 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { MapIcon, TimeIcon } from '@/icons/layout'
-import { pickupRequests } from './data'
 import { courierStatusMeta, courierTypeMeta } from './status'
+import type { PickupRequestItem } from './types'
+
+interface PickupRequestsProps {
+  requests: PickupRequestItem[]
+}
+
+const props = defineProps<PickupRequestsProps>()
 </script>
 
 <template>
@@ -19,11 +25,11 @@ import { courierStatusMeta, courierTypeMeta } from './status'
           Permintaan yang belum memiliki kurir.
         </p>
       </div>
-      <Badge color="gray" size="sm">{{ pickupRequests.length }} tugas</Badge>
+      <Badge color="gray" size="sm">{{ props.requests.length }} tugas</Badge>
     </div>
 
     <ul class="mt-4 divide-y divide-gray-100 dark:divide-gray-800">
-      <li v-for="request in pickupRequests" :key="request.id" class="py-3.5 first:pt-1">
+      <li v-for="request in props.requests" :key="request.id" class="py-3.5 first:pt-1">
         <div class="flex items-start justify-between gap-2">
           <div class="flex flex-wrap items-center gap-2">
             <Badge size="sm" :color="courierTypeMeta[request.type].color">
@@ -48,10 +54,13 @@ import { courierStatusMeta, courierTypeMeta } from './status'
             <TimeIcon class="size-3.5" />
             {{ request.schedule }}
           </span>
-          <Button variant="outline" size="xs" disabled title="Penugasan kurir belum tersedia">
-            Tugaskan
+          <Button as-child variant="outline" size="xs">
+            <RouterLink to="/pickup-delivery">Tugaskan</RouterLink>
           </Button>
         </div>
+      </li>
+      <li v-if="props.requests.length === 0" class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+        Tidak ada permintaan yang menunggu kurir.
       </li>
     </ul>
   </div>

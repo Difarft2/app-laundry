@@ -1,9 +1,21 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { formatCompactCurrency, formatCurrency } from '@/utils/format'
-import { expenseItems, expenseTotal } from './data'
+import type { ExpenseItem } from './types'
 
-const averageExpense = computed(() => Math.round(expenseTotal / expenseItems.length))
+interface ExpenseBreakdownProps {
+  items: ExpenseItem[]
+  total: number
+  loading?: boolean
+  error?: string | null
+}
+
+const props = withDefaults(defineProps<ExpenseBreakdownProps>(), {
+  loading: false,
+  error: null,
+})
+
+const averageExpense = () =>
+  props.items.length > 0 ? Math.round(props.total / props.items.length) : 0
 </script>
 
 <template>
@@ -20,15 +32,15 @@ const averageExpense = computed(() => Math.round(expenseTotal / expenseItems.len
     <div class="mt-4 rounded-xl bg-gray-50 px-4 py-3 dark:bg-white/3">
       <p class="text-xs text-gray-500 dark:text-gray-400">Total pengeluaran</p>
       <p class="mt-1 text-xl font-bold text-gray-800 dark:text-white/90">
-        {{ formatCurrency(expenseTotal) }}
+        {{ formatCurrency(props.total) }}
       </p>
-      <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-        Rata-rata {{ formatCompactCurrency(averageExpense) }} per kategori
+      <p v-if="props.items.length > 0" class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+        Rata-rata {{ formatCompactCurrency(averageExpense()) }} per kategori
       </p>
     </div>
 
     <ul class="mt-4 flex-1 space-y-3.5">
-      <li v-for="item in expenseItems" :key="item.id">
+      <li v-for="item in props.items" :key="item.id">
         <div class="flex items-center justify-between gap-3">
           <span class="flex min-w-0 items-center gap-2">
             <span
@@ -55,6 +67,12 @@ const averageExpense = computed(() => Math.round(expenseTotal / expenseItems.len
             {{ formatCurrency(item.amount) }}
           </span>
         </div>
+      </li>
+      <li
+        v-if="props.items.length === 0"
+        class="py-8 text-center text-sm text-gray-500 dark:text-gray-400"
+      >
+        {{ props.error ?? (props.loading ? 'Memuat pengeluaran…' : 'Belum ada pengeluaran tercatat bulan ini.') }}
       </li>
     </ul>
   </div>

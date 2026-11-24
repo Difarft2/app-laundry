@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import type { ApexOptions } from 'apexcharts'
 import VueApexCharts from 'vue3-apexcharts'
 import { useTheme } from '@/composables/useTheme'
-import { fetchPaymentMethodsSummary, type PaymentMethodSummary } from '@/services/dashboard'
-import { normalizeApiError } from '@/services/http'
+import { useDashboardStore } from '@/stores/dashboard'
 import { formatCompactCurrency, formatCurrency, formatNumber } from '@/utils/format'
+import { mapPaymentMethods } from './mapping'
 
 const { isDarkMode } = useTheme()
+const dashboard = useDashboardStore()
 
-const methods = ref<PaymentMethodSummary[]>([])
-const loading = ref(false)
-const loadError = ref<string | null>(null)
+const methods = computed(() =>
+  mapPaymentMethods(dashboard.data?.data.charts.payment_methods ?? []),
+)
+const loading = computed(() => dashboard.loading)
+const loadError = computed(() => dashboard.error)
 
 const series = computed(() => methods.value.map((method) => method.amount))
 const totalTransactions = computed(() =>
@@ -21,21 +24,11 @@ const paymentTotal = computed(() =>
   methods.value.reduce((total, method) => total + method.amount, 0),
 )
 
-const loadMethods = async () => {
-  loading.value = true
-  loadError.value = null
+const loadMethods = () => dashboard.refresh()
 
-  try {
-    methods.value = await fetchPaymentMethodsSummary()
-  } catch (error) {
-    loadError.value = normalizeApiError(error).message
-    methods.value = []
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(loadMethods)
+onMounted(() => {
+  void dashboard.load()
+})
 
 const options = computed<ApexOptions>(() => ({
   colors: methods.value.map((method) => method.color),
@@ -74,7 +67,7 @@ const options = computed<ApexOptions>(() => ({
     <div>
       <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Metode Pembayaran</h3>
       <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Komposisi pembayaran 30 hari terakhir.
+        Komposisi seluruh pembayaran yang berhasil.
       </p>
     </div>
 
@@ -121,7 +114,7 @@ const options = computed<ApexOptions>(() => ({
       v-else-if="!loading && methods.length === 0"
       class="mt-3 text-xs text-gray-400 dark:text-gray-500"
     >
-      Belum ada pembayaran yang berhasil dalam 30 hari terakhir.
+      Belum ada pembayaran yang berhasil tercatat.
     </p>
   </div>
 </template>

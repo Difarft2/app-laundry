@@ -35,10 +35,11 @@ role dan permission terbaru.
 | Layanan | Lihat | Lihat | Kelola | Tidak |
 | Waktu layanan | Lihat | Lihat | Kelola | Tidak |
 | Metode pembayaran | Lihat | Kelola | Lihat | Tidak |
-| Pesanan | Lihat, ubah status, hapus | Lihat | **Buat**, ubah, ubah status, scan QR & cetak struk | Tidak |
+| Pesanan | Lihat, ubah status, hapus | Lihat | **Buat**, ubah, ubah status, scan QR, cetak struk & antar | Tidak |
 | Pembayaran | Lihat | Lihat | Lihat, catat | Tidak |
+| Pengeluaran | Lihat, catat/ubah/hapus | Lihat | Tidak | Tidak |
 | Proses laundry | Tidak | Lihat | Kelola | Tidak |
-| Antar-jemput | Lihat, tugaskan | Lihat | Lihat | **Kelola** |
+| Antar-jemput | Lihat, tugaskan | Lihat | Lihat | **Terima tugas & kelola status** |
 | Laporan | Ya | Ya | Tidak | Tidak |
 | Pengaturan dan role | Ya | Tidak | Tidak | Tidak |
 
@@ -56,9 +57,12 @@ Aturan utama:
     atau menghapus layanan, waktu layanan, serta metode pembayaran. Owner
     tetap dapat mengelola akun pengguna, memantau transaksi, dan melihat
     laporan/histori.
+-   **Owner adalah satu-satunya role dengan `finance.manage`**: dapat mencatat,
+    mengubah, dan menghapus pengeluaran. Admin hanya memiliki `finance.view`
+    (read-only).
 -   **Kurir hanya memiliki akses antar-jemput** (`delivery.view` dan
-    `delivery.update`), tanpa akses ke pesanan laundry, pembayaran, layanan,
-    pengguna, atau laporan.
+    `delivery.update`), tanpa akses ke pesanan laundry, pembayaran, pengeluaran,
+    layanan, pengguna, atau laporan.
 
 Role `admin` tidak memiliki permission mutasi pesanan/pembayaran (read-only),
 tetapi tetap dapat mengelola master data layanan, waktu layanan, dan metode
@@ -83,8 +87,9 @@ role, sehingga setiap akun hanya melihat tampilannya sendiri.
   pembayaran, riwayat pembayaran, pengguna, dan laporan.
 - **Admin**: dashboard, riwayat pesanan, layanan, waktu layanan, metode
   pembayaran, riwayat pembayaran, pengguna, dan laporan.
-- **Karyawan**: dashboard, pesanan, layanan, waktu layanan, metode pembayaran,
-  riwayat pembayaran, proses laundry, dan antar-jemput.
+- **Karyawan**: dashboard, pesanan, proses laundry, dan antar-jemput. Pada grup
+  **Histori**, hanya **Riwayat Pembayaran** yang ditampilkan; menu Layanan,
+  Waktu Layanan, dan Metode Pembayaran disembunyikan.
 - **Kurir**: dashboard dan antar-jemput.
 
 Menu yang halamannya belum dibuat tetap tampil sebagai penanda "Segera",

@@ -1,7 +1,0 @@
-export { default as Calendar } from './index.vue'
-export { default } from './index.vue'
-export { default as CalendarEventItem } from './event-item.vue'
-export { default as CalendarEventModal } from './event-modal.vue'
-export { default as CalendarViewSelect } from './view-selector.vue'
-export * from './types'
-export * from './icons'

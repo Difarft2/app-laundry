@@ -1,6 +1,8 @@
 import { http } from './http'
 import type { MessageResponse } from '@/types/auth'
+import type { DeliveryTask } from '@/types/delivery'
 import type {
+  CreateOrderDeliveryPayload,
   CreateOrderPayload,
   Order,
   OrderResponse,
@@ -50,6 +52,11 @@ export const ordersApi = {
 
   async updateStatus(id: number, payload: UpdateOrderStatusPayload): Promise<Order> {
     const { data } = await http.patch<OrderResponse>(`/orders/${id}/status`, payload)
+    return data.data
+  },
+
+  async createDelivery(id: number, payload: CreateOrderDeliveryPayload = {}): Promise<DeliveryTask> {
+    const { data } = await http.post<{ data: DeliveryTask }>(`/orders/${id}/delivery`, payload)
     return data.data
   },
 

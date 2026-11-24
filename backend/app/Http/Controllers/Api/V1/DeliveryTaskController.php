@@ -8,6 +8,7 @@ use App\Http\Requests\Api\V1\Delivery\StoreDeliveryTaskRequest;
 use App\Http\Requests\Api\V1\Delivery\UpdateDeliveryStatusRequest;
 use App\Http\Resources\Api\V1\DeliveryTaskResource;
 use App\Models\AntarJemput;
+use App\Models\Pesanan;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,7 @@ class DeliveryTaskController extends Controller
 {
     private const TRANSITIONS = [
         'menunggu' => ['ditugaskan', 'gagal'],
-        'ditugaskan' => ['menuju_lokasi', 'gagal'],
+        'ditugaskan' => ['menuju_lokasi', 'selesai', 'gagal'],
         'menuju_lokasi' => ['barang_diambil', 'barang_diantar', 'gagal'],
         'barang_diambil' => ['selesai', 'gagal'],
         'barang_diantar' => ['selesai', 'gagal'],
@@ -45,17 +46,41 @@ class DeliveryTaskController extends Controller
     private function scopeForUser(Request $request, $query)
     {
         if ($request->user()->hasRole('kurir')) {
-            $query->where('id_kurir', $request->user()->id);
+            $query->where(function ($query) use ($request) {
+                $query->where('id_kurir', $request->user()->id)
+                    ->orWhere(function ($query) {
+                        $query->whereNull('id_kurir')
+                            ->where('status_antar_jemput', 'menunggu');
+                    });
+            });
         }
 
         return $query;
     }
 
-    private function ensureCanAccess(Request $request, AntarJemput $task): void
-    {
+    /**
+     * Kurir boleh melihat tugas yang belum diambil, tetapi tidak boleh
+     * mengubah statusnya sebelum menerima tugas tersebut.
+     */
+    private function ensureCanAccess(
+        Request $request,
+        AntarJemput $task,
+        bool $allowUnassigned = false
+    ): void {
+        if (!$request->user()->hasRole('kurir')) {
+            return;
+        }
+
+        if (
+            $allowUnassigned
+            && $task->id_kurir === null
+            && $task->status_antar_jemput === 'menunggu'
+        ) {
+            return;
+        }
+
         abort_if(
-            $request->user()->hasRole('kurir')
-                && (int) $task->id_kurir !== (int) $request->user()->id,
+            (int) $task->id_kurir !== (int) $request->user()->id,
             403,
             'Anda hanya dapat mengakses tugas milik Anda.'
         );
@@ -115,7 +140,7 @@ class DeliveryTaskController extends Controller
 
     public function show(Request $request, AntarJemput $deliveryTask): DeliveryTaskResource
     {
-        $this->ensureCanAccess($request, $deliveryTask);
+        $this->ensureCanAccess($request, $deliveryTask, true);
 
         return new DeliveryTaskResource($this->loadRelations($deliveryTask));
     }
@@ -153,6 +178,92 @@ class DeliveryTaskController extends Controller
         return (new DeliveryTaskResource($this->loadRelations($task)))
             ->response()
             ->setStatusCode(201);
+    }
+
+    /**
+     * Kurir mengambil tugas yang masih menunggu.
+     */
+    public function accept(Request $request, AntarJemput $deliveryTask): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_unless($user->hasRole('kurir'), 403, 'Hanya kurir yang dapat menerima tugas.');
+        abort_if(
+            $deliveryTask->status_antar_jemput !== 'menunggu',
+            422,
+            'Tugas ini tidak lagi menunggu kurir.'
+        );
+        abort_if(
+            $deliveryTask->id_kurir !== null,
+            422,
+            'Tugas ini sudah ditugaskan ke kurir lain.'
+        );
+
+        DB::transaction(function () use ($deliveryTask, $user) {
+            $task = AntarJemput::whereKey($deliveryTask->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            abort_if(
+                $task->status_antar_jemput !== 'menunggu' || $task->id_kurir !== null,
+                422,
+                'Tugas ini sudah diterima kurir lain.'
+            );
+
+            $task->update([
+                'id_kurir' => $user->id,
+                'status_antar_jemput' => 'ditugaskan',
+            ]);
+
+            $task->riwayatAntarJemput()->create([
+                'id_user' => $user->id,
+                'status_sebelumnya' => 'menunggu',
+                'status_selanjutnya' => 'ditugaskan',
+                'keterangan' => 'Kurir menerima tugas.',
+                'tanggal_perubahan' => now(),
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tugas diterima. Status berubah menjadi proses antar.',
+            'data' => new DeliveryTaskResource($this->loadRelations($deliveryTask->refresh())),
+        ]);
+    }
+
+    /**
+     * Selesaikan pesanan otomatis ketika tugas pengantaran selesai.
+     */
+    private function completeOrder(AntarJemput $deliveryTask): bool
+    {
+        if ($deliveryTask->jenis_antar_jemput !== 'pengantaran') {
+            return false;
+        }
+
+        $order = Pesanan::whereKey($deliveryTask->id_pesanan)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if (in_array($order->status_pesanan, ['selesai', 'dibatalkan'], true)) {
+            return false;
+        }
+
+        $statusLama = $order->status_pesanan;
+
+        $order->update([
+            'status_pesanan' => 'selesai',
+            'tanggal_selesai' => $order->tanggal_selesai ?? now(),
+        ]);
+
+        $order->riwayatStatus()->create([
+            'id_user' => Auth::id(),
+            'status_sebelumnya' => $statusLama,
+            'status_selanjutnya' => 'selesai',
+            'keterangan' => 'Pesanan selesai diantar oleh kurir.',
+            'tanggal_perubahan' => now(),
+        ]);
+
+        return true;
     }
 
     public function assign(AssignCourierRequest $request, AntarJemput $deliveryTask): JsonResponse
@@ -262,7 +373,15 @@ class DeliveryTaskController extends Controller
             ], 422);
         }
 
-        DB::transaction(function () use ($deliveryTask, $validated, $statusLama, $statusBaru) {
+        $orderSelesai = false;
+
+        DB::transaction(function () use (
+            $deliveryTask,
+            $validated,
+            $statusLama,
+            $statusBaru,
+            &$orderSelesai
+        ) {
             $deliveryTask->update([
                 'status_antar_jemput' => $statusBaru,
                 'tanggal_selesai' => $statusBaru === 'selesai'
@@ -277,11 +396,17 @@ class DeliveryTaskController extends Controller
                 'keterangan' => $validated['keterangan'] ?? null,
                 'tanggal_perubahan' => now(),
             ]);
+
+            if ($statusBaru === 'selesai') {
+                $orderSelesai = $this->completeOrder($deliveryTask);
+            }
         });
 
         return response()->json([
             'success' => true,
-            'message' => 'Status tugas berhasil diperbarui.',
+            'message' => $orderSelesai
+                ? 'Status tugas berhasil diperbarui. Pesanan otomatis ditandai selesai.'
+                : 'Status tugas berhasil diperbarui.',
             'data' => new DeliveryTaskResource($this->loadRelations($deliveryTask->refresh())),
         ]);
     }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { Button } from '@/components/ui/button'
 import ScanOrderDialog from '@/components/main/orders/ScanOrderDialog.vue'
@@ -15,31 +15,44 @@ import PaymentBreakdown from '@/components/main/dashboard/laundry/PaymentBreakdo
 import PickupRequests from '@/components/main/dashboard/laundry/PickupRequests.vue'
 import RecentOrders from '@/components/main/dashboard/laundry/RecentOrders.vue'
 import RevenueChart from '@/components/main/dashboard/laundry/RevenueChart.vue'
-import {
-  adminMetrics,
-  courierActivities,
-  courierActivityStats,
-  karyawanActivities,
-  karyawanActivityStats,
-  karyawanMetrics,
-  kurirMetrics,
-  ownerActivities,
-  ownerActivityStats,
-  ownerMetrics,
-} from '@/components/main/dashboard/laundry/data'
+import type { DashboardMetricsApi } from '@/services/dashboard'
 import type { DashboardRole } from '@/components/main/dashboard/laundry/types'
+import {
+  mapActivities,
+  mapActivityStats,
+  mapCourierHistory,
+  mapEmployeeActivities,
+  mapExpenses,
+  mapMetrics,
+  mapOrders,
+  mapPickupRequests,
+  mapQueue,
+  mapTasks,
+} from '@/components/main/dashboard/laundry/mapping'
 import { CameraIcon } from '@/icons/layout'
 import { useAuthStore } from '@/stores/auth'
+import { useDashboardStore } from '@/stores/dashboard'
 
 const auth = useAuthStore()
+const dashboard = useDashboardStore()
 const scanOpen = ref(false)
 const scanMessage = ref<string | null>(null)
 
+onMounted(() => {
+  void dashboard.load()
+})
+
 /**
- * Dashboard selalu mengikuti role akun yang sedang login. Tidak ada
- * pratinjau role agar setiap pengguna hanya melihat tampilan miliknya.
+ * Dashboard selalu mengikuti role akun yang sedang login. Backend mengirim role
+ * yang sama agar scope datanya konsisten dengan tampilan.
  */
-const role = computed<DashboardRole>(() => auth.role ?? 'karyawan')
+const role = computed<DashboardRole>(() => {
+  const apiRole = dashboard.data?.data.role
+  if (apiRole === 'owner' || apiRole === 'admin' || apiRole === 'karyawan' || apiRole === 'kurir') {
+    return apiRole
+  }
+  return auth.role ?? 'karyawan'
+})
 
 const isOwner = computed(() => role.value === 'owner')
 const isAdmin = computed(() => role.value === 'admin')
@@ -54,24 +67,45 @@ const canViewUsers = computed(() => auth.hasPermission('users.view'))
 const canCreateOrder = computed(() => auth.hasPermission('orders.create'))
 const canUpdateStatus = computed(() => auth.hasPermission('orders.update-status'))
 
-const metrics = computed(() => {
-  if (isKaryawan.value) return karyawanMetrics
-  if (role.value === 'kurir') return kurirMetrics
-  if (isAdmin.value) return adminMetrics
-  return ownerMetrics
-})
+const emptyMetrics: DashboardMetricsApi = {
+  totalOrders: 0,
+  completedOrders: 0,
+  revenue: 0,
+  expenses: 0,
+  activeEmployees: 0,
+  activeCouriers: 0,
+  pendingPickups: 0,
+  newOrdersToday: 0,
+  queueWashing: 0,
+  washingInProgress: 0,
+  finishing: 0,
+  doneToday: 0,
+  unpaid: 0,
+  waitingCourier: 0,
+  onDelivery: 0,
+  completedDeliveriesToday: 0,
+}
 
-const activityStats = computed(() => {
-  if (isKaryawan.value) return karyawanActivityStats
-  if (role.value === 'kurir') return courierActivityStats
-  return ownerActivityStats
-})
+const payload = computed(() => dashboard.data?.data ?? null)
+const metricsApi = computed(() => payload.value?.metrics ?? emptyMetrics)
 
-const activities = computed(() => {
-  if (isKaryawan.value) return karyawanActivities
-  if (role.value === 'kurir') return courierActivities
-  return ownerActivities
-})
+const metrics = computed(() => mapMetrics(metricsApi.value, role.value))
+const activityStats = computed(() => mapActivityStats(metricsApi.value, role.value))
+const activities = computed(() => mapActivities(payload.value?.recent.activities ?? []))
+const employeeActivities = computed(() =>
+  mapEmployeeActivities(payload.value?.recent.activities ?? []),
+)
+const orders = computed(() => mapOrders(payload.value?.recent.orders ?? []))
+const queue = computed(() =>
+  mapQueue(payload.value?.laundry.queue ?? [], metricsApi.value),
+)
+const activeTasks = computed(() => mapTasks(payload.value?.delivery.active_tasks ?? []))
+const courierHistory = computed(() => mapCourierHistory(payload.value?.delivery.history ?? []))
+const pickupRequests = computed(() =>
+  mapPickupRequests(payload.value?.delivery.pickup_requests ?? []),
+)
+const expenses = computed(() => mapExpenses(payload.value?.charts.expenses ?? []))
+const expenseTotal = computed(() => metricsApi.value.expenses)
 
 const activityTitle = computed(() => {
   if (isKaryawan.value) return 'Aktivitas Proses Laundry'
@@ -92,6 +126,17 @@ const activitySubtitle = computed(() => {
   <AdminLayout>
     <div class="space-y-4 md:space-y-6">
       <DashboardHeader :role="role" :name="auth.user?.name ?? 'Pengguna'" />
+
+      <p
+        v-if="dashboard.error"
+        role="alert"
+        class="rounded-xl border border-error-200 bg-error-50 px-5 py-3 text-sm text-error-700 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-400"
+      >
+        {{ dashboard.error }}
+        <button type="button" class="ms-2 font-medium underline" @click="dashboard.refresh()">
+          Muat ulang
+        </button>
+      </p>
 
       <!-- Hanya karyawan yang dapat membuat pesanan. -->
       <div
@@ -153,7 +198,11 @@ const activitySubtitle = computed(() => {
 
         <div class="grid grid-cols-12 gap-4 md:gap-6">
           <div v-if="canViewOrders" class="col-span-12 2xl:col-span-8">
-            <RecentOrders />
+            <RecentOrders
+              :orders="orders"
+              :loading="dashboard.loading"
+              :error="dashboard.error"
+            />
           </div>
           <div class="col-span-12 space-y-4 md:space-y-6 2xl:col-span-4">
             <DailyActivity
@@ -162,21 +211,30 @@ const activitySubtitle = computed(() => {
               :stats="activityStats"
               :activities="activities"
             />
-            <PickupRequests v-if="canViewDelivery" />
+            <PickupRequests v-if="canViewDelivery" :requests="pickupRequests" />
           </div>
         </div>
 
         <div class="grid grid-cols-12 gap-4 md:gap-6">
           <div v-if="canViewUsers" class="col-span-12 xl:col-span-7">
-            <EmployeeActivity />
+            <EmployeeActivity
+              :activities="employeeActivities"
+              :stats="activityStats"
+            />
           </div>
           <div v-if="canViewFinance" class="col-span-12 xl:col-span-5">
-            <ExpenseBreakdown />
+            <ExpenseBreakdown
+              :items="expenses"
+              :total="expenseTotal"
+              :loading="dashboard.loading"
+              :error="dashboard.error"
+            />
           </div>
         </div>
 
         <CourierHistory
           v-if="canViewDelivery"
+          :tasks="courierHistory"
           title="Riwayat Kurir"
           subtitle="Seluruh tugas antar-jemput yang telah diselesaikan kurir."
         />
@@ -198,7 +256,11 @@ const activitySubtitle = computed(() => {
 
         <div class="grid grid-cols-12 gap-4 md:gap-6">
           <div v-if="canViewOrders" class="col-span-12 2xl:col-span-8">
-            <RecentOrders />
+            <RecentOrders
+              :orders="orders"
+              :loading="dashboard.loading"
+              :error="dashboard.error"
+            />
           </div>
           <div class="col-span-12 space-y-4 md:space-y-6 2xl:col-span-4">
             <DailyActivity
@@ -207,21 +269,30 @@ const activitySubtitle = computed(() => {
               :stats="activityStats"
               :activities="activities"
             />
-            <PickupRequests v-if="canViewDelivery" />
+            <PickupRequests v-if="canViewDelivery" :requests="pickupRequests" />
           </div>
         </div>
 
         <div class="grid grid-cols-12 gap-4 md:gap-6">
           <div v-if="canViewUsers" class="col-span-12 xl:col-span-7">
-            <EmployeeActivity />
+            <EmployeeActivity
+              :activities="employeeActivities"
+              :stats="activityStats"
+            />
           </div>
           <div v-if="canViewFinance" class="col-span-12 xl:col-span-5">
-            <ExpenseBreakdown />
+            <ExpenseBreakdown
+              :items="expenses"
+              :total="expenseTotal"
+              :loading="dashboard.loading"
+              :error="dashboard.error"
+            />
           </div>
         </div>
 
         <CourierHistory
           v-if="canViewDelivery"
+          :tasks="courierHistory"
           title="Riwayat Kurir"
           subtitle="Seluruh tugas antar-jemput yang telah diselesaikan kurir."
         />
@@ -231,7 +302,13 @@ const activitySubtitle = computed(() => {
       <template v-else-if="isKaryawan">
         <div class="grid grid-cols-12 gap-4 md:gap-6">
           <div v-if="canViewLaundry" class="col-span-12 xl:col-span-8">
-            <LaundryQueue />
+            <LaundryQueue
+              :summary="queue.summary"
+              :items="queue.items"
+              :notes="queue.notes"
+              :loading="dashboard.loading"
+              :error="dashboard.error"
+            />
           </div>
           <div class="col-span-12 xl:col-span-4">
             <DailyActivity
@@ -244,7 +321,12 @@ const activitySubtitle = computed(() => {
           </div>
         </div>
 
-        <RecentOrders v-if="canViewOrders" />
+        <RecentOrders
+          v-if="canViewOrders"
+          :orders="orders"
+          :loading="dashboard.loading"
+          :error="dashboard.error"
+        />
 
         <div
           v-if="canViewPayments || canViewDelivery"
@@ -254,7 +336,7 @@ const activitySubtitle = computed(() => {
             <PaymentBreakdown />
           </div>
           <div v-if="canViewDelivery" class="col-span-12 xl:col-span-6">
-            <PickupRequests />
+            <PickupRequests :requests="pickupRequests" />
           </div>
         </div>
       </template>
@@ -263,7 +345,11 @@ const activitySubtitle = computed(() => {
       <template v-else>
         <div class="grid grid-cols-12 gap-4 md:gap-6">
           <div v-if="canViewDelivery" class="col-span-12 xl:col-span-8">
-            <CourierTasks />
+            <CourierTasks
+              :tasks="activeTasks"
+              :loading="dashboard.loading"
+              :error="dashboard.error"
+            />
           </div>
           <div class="col-span-12 xl:col-span-4">
             <DailyActivity
@@ -276,7 +362,7 @@ const activitySubtitle = computed(() => {
           </div>
         </div>
 
-        <CourierHistory v-if="canViewDelivery" />
+        <CourierHistory v-if="canViewDelivery" :tasks="courierHistory" />
       </template>
 
       <p

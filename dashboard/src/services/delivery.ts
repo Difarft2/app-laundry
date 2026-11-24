@@ -23,6 +23,11 @@ export const deliveryApi = {
     return data.data
   },
 
+  async accept(id: number): Promise<DeliveryTask> {
+    const { data } = await http.patch(`/delivery-tasks/${id}/accept`)
+    return data.data
+  },
+
   async updateStatus(id: number, payload: UpdateDeliveryStatusPayload): Promise<DeliveryTask> {
     const { data } = await http.patch(`/delivery-tasks/${id}/status`, payload)
     return data.data

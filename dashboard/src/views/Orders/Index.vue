@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import RecordPaymentDialog from '@/components/main/payments/RecordPaymentDialog.vue'
+import CreateDeliveryDialog from '@/components/main/orders/CreateDeliveryDialog.vue'
 import DeleteOrderDialog from '@/components/main/orders/DeleteOrderDialog.vue'
 import OrderFormDialog from '@/components/main/orders/OrderFormDialog.vue'
 import OrderSuccessDialog from '@/components/main/orders/OrderSuccessDialog.vue'
@@ -47,11 +48,13 @@ import {
   PrinterIcon,
   SearchIcon,
   TrashBinIcon,
+  TruckDeliveryIcon,
   XIcon,
 } from '@/icons/layout'
 import { normalizeApiError } from '@/services/http'
 import { ordersApi } from '@/services/orders'
 import { useAuthStore } from '@/stores/auth'
+import { hasActiveDelivery } from '@/utils/order-delivery'
 import { printOrderReceipt } from '@/utils/order-receipt'
 import type { PaginationMeta } from '@/types/auth'
 import type { Order, OrderStatus } from '@/types/order'
@@ -75,6 +78,7 @@ const canUpdate = computed(() => auth.hasPermission('orders.update'))
 const canUpdateStatus = computed(() => auth.hasPermission('orders.update-status'))
 const canDelete = computed(() => auth.hasPermission('orders.delete'))
 const canRecordPayment = computed(() => auth.hasPermission('payments.create'))
+const canCreateDelivery = computed(() => auth.hasPermission('orders.update-status'))
 
 const totalPages = computed(() => Math.max(1, meta.value?.last_page ?? 1))
 
@@ -167,6 +171,8 @@ const deleteTarget = ref<Order | null>(null)
 
 const paymentOpen = ref(false)
 const paymentTarget = ref<Order | null>(null)
+const deliveryOpen = ref(false)
+const deliveryTarget = ref<Order | null>(null)
 
 const openStatus = (order: Order) => {
   statusTarget.value = order
@@ -191,6 +197,23 @@ const printOrder = async (order: Order) => {
   } catch (error) {
     loadError.value = normalizeApiError(error).message
   }
+}
+
+const canAntar = (order: Order): boolean =>
+  canCreateDelivery.value
+  && order.status_pesanan === 'siap_diambil'
+  && !hasActiveDelivery(order)
+
+const openDelivery = (order: Order) => {
+  loadError.value = null
+  deliveryTarget.value = order
+  deliveryOpen.value = true
+}
+
+const handleDeliveryCreated = async (message: string) => {
+  successMessage.value = message
+  page.value = 1
+  await load()
 }
 
 const handleSaved = async (message: string) => {
@@ -505,6 +528,11 @@ const remainingLabel = (order: Order): string =>
                             Lihat detail
                           </DropdownMenuItem>
 
+                          <DropdownMenuItem v-if="canAntar(order)" @select="openDelivery(order)">
+                            <TruckDeliveryIcon class="size-5" />
+                            Antar
+                          </DropdownMenuItem>
+
                           <DropdownMenuItem @select="printOrder(order)">
                             <PrinterIcon class="size-5" />
                             Cetak struk
@@ -593,6 +621,12 @@ const remainingLabel = (order: Order): string =>
     <OrderFormDialog v-model:open="formOpen" @saved="handleSaved" @created="handleCreated" />
 
     <OrderSuccessDialog v-model:open="successOpen" :order="successOrder" />
+
+    <CreateDeliveryDialog
+      v-model:open="deliveryOpen"
+      :order="deliveryTarget"
+      @created="handleDeliveryCreated"
+    />
 
     <UpdateOrderStatusDialog
       v-model:open="statusOpen"

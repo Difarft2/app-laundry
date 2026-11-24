@@ -7,7 +7,7 @@ import AssignCourierDialog from '@/components/main/courier/AssignCourierDialog.v
 import UpdateDeliveryStatusDialog from '@/components/main/courier/UpdateDeliveryStatusDialog.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowLeftIcon, LoaderCircleIcon, PencilIcon } from '@/icons/layout'
+import { ArrowLeftIcon, CheckIcon, LoaderCircleIcon, PencilIcon } from '@/icons/layout'
 import { deliveryStatusMeta } from '@/constants/delivery'
 import { deliveryApi } from '@/services/delivery'
 import { normalizeApiError } from '@/services/http'
@@ -31,12 +31,21 @@ const taskId = computed(() => Number(route.params.id))
 
 const canAssign = computed(() => auth.hasPermission('delivery.assign'))
 const canUpdateStatus = computed(() => auth.hasPermission('delivery.update'))
+const isCourier = computed(() => auth.hasRole('kurir'))
+const canAccept = computed(() => isCourier.value && canUpdateStatus.value)
 const isAssignedToMe = computed(
-  () => auth.hasRole('kurir') && task.value?.kurir?.id === auth.user?.id,
+  () => isCourier.value && task.value?.kurir?.id === auth.user?.id,
 )
 
 const canAssignNow = computed(
   () => canAssign.value && ['menunggu', 'ditugaskan'].includes(task.value?.status_antar_jemput ?? ''),
+)
+
+const canAcceptNow = computed(
+  () =>
+    canAccept.value
+    && task.value?.status_antar_jemput === 'menunggu'
+    && task.value.kurir === null,
 )
 
 const load = async (): Promise<void> => {
@@ -64,6 +73,21 @@ onMounted(() => {
 const handleUpdated = async (message: string) => {
   successMessage.value = message
   await load()
+}
+
+const acceptTask = async () => {
+  if (!task.value) return
+
+  loadError.value = null
+
+  try {
+    const updated = await deliveryApi.accept(task.value.id_antar_jemput)
+    await handleUpdated(
+      `Tugas ${updated.pesanan?.kode_pesanan ?? ''} diterima. Status sekarang proses antar.`,
+    )
+  } catch (error) {
+    loadError.value = normalizeApiError(error).message
+  }
 }
 </script>
 
@@ -124,6 +148,10 @@ const handleUpdated = async (message: string) => {
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
+              <Button v-if="canAcceptNow" size="sm" @click="acceptTask">
+                <CheckIcon class="size-4" />
+                Terima tugas
+              </Button>
               <Button v-if="canAssignNow" variant="outline" size="sm" @click="assignOpen = true">
                 <PencilIcon class="size-4" />
                 {{ task.kurir ? 'Ganti kurir' : 'Tugaskan kurir' }}

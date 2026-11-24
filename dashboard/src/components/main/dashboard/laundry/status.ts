@@ -27,12 +27,13 @@ export const paymentStatusMeta: Record<PaymentStatus, { label: string; color: Ba
 }
 
 export const courierStatusMeta: Record<CourierTaskStatus, { label: string; color: BadgeTone }> = {
-  menunggu_kurir: { label: 'Menunggu kurir', color: 'gray' },
-  ditugaskan: { label: 'Kurir ditugaskan', color: 'info' },
+  menunggu: { label: 'Menunggu kurir', color: 'gray' },
+  ditugaskan: { label: 'Proses antar', color: 'info' },
   menuju_lokasi: { label: 'Menuju lokasi', color: 'warning' },
   barang_diambil: { label: 'Barang diambil', color: 'info' },
   barang_diantar: { label: 'Barang diantar', color: 'info' },
-  selesai: { label: 'Tugas selesai', color: 'success' },
+  selesai: { label: 'Selesai diantar', color: 'success' },
+  gagal: { label: 'Gagal', color: 'error' },
 }
 
 export const courierTypeMeta: Record<CourierTaskType, { label: string; color: BadgeTone }> = {
@@ -40,28 +41,21 @@ export const courierTypeMeta: Record<CourierTaskType, { label: string; color: Ba
   antar: { label: 'Antar', color: 'info' },
 }
 
-export const roleMeta: Record<
-  DashboardRole,
-  { label: string; ownerName: string; description: string }
-> = {
+export const roleMeta: Record<DashboardRole, { label: string; description: string }> = {
   owner: {
     label: 'Owner',
-    ownerName: 'Budi Santoso',
-    description: 'Pemantauan bisnis: pendapatan, pengeluaran, histori, dan laporan outlet.',
+    description: 'Pemantauan bisnis: pendapatan, histori, dan laporan outlet.',
   },
   admin: {
     label: 'Admin',
-    ownerName: 'Siti Rahmawati',
     description: 'Akses baca untuk riwayat pesanan dan seluruh data historis.',
   },
   karyawan: {
     label: 'Karyawan',
-    ownerName: 'Dewi Anggraini',
     description: 'Operasional laundry: buat pesanan, proses cuci, dan pembayaran.',
   },
   kurir: {
     label: 'Kurir',
-    ownerName: 'Rizky Maulana',
     description: 'Hanya tugas penjemputan dan pengantaran yang ditugaskan kepada Anda.',
   },
 }

@@ -2,17 +2,28 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CallIcon, MapIcon, TimeIcon } from '@/icons/layout'
-import { courierTasks } from './data'
 import { courierStatusMeta, courierTypeMeta } from './status'
-import type { CourierTaskStatus } from './types'
+import type { CourierTask, CourierTaskStatus } from './types'
+
+interface CourierTasksProps {
+  tasks: CourierTask[]
+  loading?: boolean
+  error?: string | null
+}
+
+const props = withDefaults(defineProps<CourierTasksProps>(), {
+  loading: false,
+  error: null,
+})
 
 const actionLabel: Record<CourierTaskStatus, string> = {
-  menunggu_kurir: 'Tugaskan kurir',
-  ditugaskan: 'Mulai perjalanan',
-  menuju_lokasi: 'Konfirmasi barang diambil',
-  barang_diambil: 'Selesaikan tugas',
-  barang_diantar: 'Selesaikan tugas',
-  selesai: 'Tugas selesai',
+  menunggu: 'Lihat tugas',
+  ditugaskan: 'Lihat tugas',
+  menuju_lokasi: 'Lihat tugas',
+  barang_diambil: 'Lihat tugas',
+  barang_diantar: 'Lihat tugas',
+  selesai: 'Lihat tugas',
+  gagal: 'Lihat tugas',
 }
 </script>
 
@@ -27,12 +38,12 @@ const actionLabel: Record<CourierTaskStatus, string> = {
           Penjemputan dan pengantaran yang ditugaskan kepada Anda.
         </p>
       </div>
-      <Badge color="primary" size="sm">{{ courierTasks.length }} tugas</Badge>
+      <Badge color="primary" size="sm">{{ props.tasks.length }} tugas</Badge>
     </div>
 
     <div class="mt-4 space-y-3">
       <article
-        v-for="task in courierTasks"
+        v-for="task in props.tasks"
         :key="task.id"
         class="rounded-xl border border-gray-200 p-4 dark:border-gray-800"
       >
@@ -81,15 +92,20 @@ const actionLabel: Record<CourierTaskStatus, string> = {
             {{ task.phone }}
           </a>
 
-          <Button size="xs" disabled :title="`${actionLabel[task.status]} (demo)`">
-            {{ actionLabel[task.status] }}
+          <Button as-child size="xs">
+            <RouterLink :to="`/pickup-delivery/${task.id}`">
+              {{ actionLabel[task.status] }}
+            </RouterLink>
           </Button>
         </div>
       </article>
-    </div>
 
-    <p class="mt-3 text-center text-[11px] text-gray-400 dark:text-gray-500">
-      Tombol aksi aktif setelah terhubung dengan API antar-jemput.
-    </p>
+      <p
+        v-if="props.tasks.length === 0"
+        class="py-10 text-center text-sm text-gray-500 dark:text-gray-400"
+      >
+        {{ props.error ?? (props.loading ? 'Memuat tugas…' : 'Tidak ada tugas aktif.') }}
+      </p>
+    </div>
   </div>
 </template>

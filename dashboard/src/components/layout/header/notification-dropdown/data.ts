@@ -1,58 +1,26 @@
+import type { DashboardActivityApi } from '@/services/dashboard'
 import type { NotificationItem } from './types'
 
-export const notifications: NotificationItem[] = [
-  {
-    id: '1',
-    name: 'Rizky Maulana',
-    avatar: '/images/user/user-02.jpg',
-    action: 'menuju lokasi penjemputan untuk',
-    project: 'AJ-20261116-0042',
-    time: '5 menit lalu',
-    status: 'online',
-  },
-  {
-    id: '2',
-    name: 'Siti Rahmawati',
-    avatar: '/images/user/user-03.jpg',
-    action: 'mencatat pembayaran pada',
-    project: 'Nota PL-20261115-0124',
-    time: '12 menit lalu',
-    status: 'online',
-  },
-  {
-    id: '3',
-    name: 'Dewi Anggraini',
-    avatar: '/images/user/user-04.jpg',
-    action: 'memperbarui status menjadi Finishing pada',
-    project: 'Nota PL-20261116-0127',
-    time: '25 menit lalu',
-    status: 'online',
-  },
-  {
-    id: '4',
-    name: 'Budi Santoso',
-    avatar: '/images/user/user-05.jpg',
-    action: 'menugaskan kurir untuk',
-    project: 'AJ-20261116-0043',
-    time: '1 jam lalu',
-    status: 'offline',
-  },
-  {
-    id: '5',
-    name: 'Ibu Sari Wulandari',
-    avatar: '/images/user/user-06.jpg',
-    action: 'membuat pesanan baru dengan',
-    project: 'Nota PL-20261116-0128',
-    time: '1 jam lalu',
-    status: 'online',
-  },
-  {
-    id: '6',
-    name: 'Rizky Maulana',
-    avatar: '/images/user/user-02.jpg',
-    action: 'menyelesaikan tugas pengantaran',
-    project: 'AJ-20261116-0041',
-    time: '2 jam lalu',
-    status: 'online',
-  },
-]
+/** Notifikasi berasal dari aktivitas nyata yang dikirim endpoint dashboard. */
+export const notificationsFromActivities = (
+  activities: DashboardActivityApi[],
+): NotificationItem[] => {
+  const timeFormatter = new Intl.DateTimeFormat('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
+  return activities.map((activity) => {
+    const date = new Date(activity.time)
+
+    return {
+      id: activity.id,
+      name: activity.user ?? 'Sistem',
+      avatar: '',
+      action: activity.title,
+      project: activity.description,
+      time: Number.isNaN(date.getTime()) ? '' : timeFormatter.format(date),
+      status: 'online' as const,
+    }
+  })
+}

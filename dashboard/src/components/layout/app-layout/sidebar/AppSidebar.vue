@@ -12,17 +12,31 @@ import { useAuthStore } from '@/stores/auth'
 const auth = useAuthStore()
 
 const isReadOnlyRole = computed(() => auth.role === 'owner' || auth.role === 'admin')
+const isKaryawan = computed(() => auth.role === 'karyawan')
+
+/** Menu master data yang tidak ditampilkan pada dashboard karyawan. */
+const hiddenForKaryawan = new Set(['/services', '/service-times', '/payment-methods'])
 
 const visibleItems = (items: NavItem[]) =>
   items
-    .filter((item) => !item.permission || auth.hasPermission(item.permission))
+    .filter((item) => {
+      if (isKaryawan.value && item.path && hiddenForKaryawan.has(item.path)) {
+        return false
+      }
+
+      return !item.permission || auth.hasPermission(item.permission)
+    })
     .map((item) =>
       isReadOnlyRole.value && item.readOnlyName ? { ...item, name: item.readOnlyName } : item,
     )
 
 const menuSections = computed<{ type: MenuType; label: string; items: NavItem[] }[]>(() => [
   { type: 'main', label: 'Menu', items: visibleItems(navItems) },
-  { type: 'others', label: 'Lainnya', items: visibleItems(othersItems) },
+  {
+    type: 'others',
+    label: isKaryawan.value ? 'Histori' : 'Lainnya',
+    items: visibleItems(othersItems),
+  },
 ])
 
 const findMatchingSubmenu = (path: string) => {

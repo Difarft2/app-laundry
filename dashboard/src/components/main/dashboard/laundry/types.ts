@@ -11,12 +11,13 @@ export type LaundryStatus = 'menunggu' | 'dicuci' | 'dikeringkan' | 'finishing' 
 export type PaymentStatus = 'belum_dibayar' | 'belum_lunas' | 'lunas'
 
 export type CourierTaskStatus =
-  | 'menunggu_kurir'
+  | 'menunggu'
   | 'ditugaskan'
   | 'menuju_lokasi'
   | 'barang_diambil'
   | 'barang_diantar'
   | 'selesai'
+  | 'gagal'
 
 export type CourierTaskType = 'jemput' | 'antar'
 

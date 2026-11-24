@@ -10,8 +10,8 @@ return new class extends Migration
      * Tahapan proses laundry yang diikuti dari form scan QR karyawan.
      *
      * `menunggu` tetap dipakai sebagai "Menunggu giliran", sehingga status
-     * lama tidak perlu diubah. Status pengantaran dipertahankan agar alur
-     * antar-jemput yang sudah ada tidak rusak.
+     * lama tidak perlu diubah. Status `dalam_pengantaran` tidak dipakai lagi;
+     * pengantaran dikelola lewat modul antar-jemput.
      */
     private const STATUSES = [
         'menunggu',
@@ -21,7 +21,6 @@ return new class extends Migration
         'disetrika',
         'diproses',
         'siap_diambil',
-        'dalam_pengantaran',
         'selesai',
         'dibatalkan',
     ];

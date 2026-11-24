@@ -9,7 +9,6 @@ export type OrderStatus =
   | 'disetrika'
   | 'diproses'
   | 'siap_diambil'
-  | 'dalam_pengantaran'
   | 'selesai'
   | 'dibatalkan'
 
@@ -46,6 +45,15 @@ export interface OrderStatusHistory {
   user: string | null
 }
 
+export interface OrderDeliveryTask {
+  id_antar_jemput: number
+  jenis_antar_jemput: string
+  status_antar_jemput: string
+  jadwal: string | null
+  alamat_tujuan: string
+  kurir: string | null
+}
+
 export interface Order {
   id_pesanan: number
   kode_pesanan: string
@@ -63,6 +71,7 @@ export interface Order {
   pembayaran?: Payment[]
   detail_pesanan?: OrderDetail[]
   riwayat_status?: OrderStatusHistory[]
+  antar_jemput?: OrderDeliveryTask[]
   created_at: string
   updated_at: string
 }
@@ -105,6 +114,14 @@ export interface CreateOrderPayload {
 export interface UpdateOrderStatusPayload {
   status_pesanan: OrderStatus
   keterangan?: string | null
+}
+
+export interface CreateOrderDeliveryPayload {
+  alamat_tujuan?: string | null
+  nama_penerima?: string | null
+  no_hp_penerima?: string | null
+  jadwal?: string | null
+  catatan?: string | null
 }
 
 export interface OrderResponse {
