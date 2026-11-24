@@ -38,9 +38,12 @@ const emit = defineEmits<{
  * Mengikuti aturan transisi di DeliveryTaskController (backend).
  */
 const TRANSITIONS: Record<DeliveryStatus, DeliveryStatus[]> = {
+  menunggu_verifikasi: ['menunggu', 'gagal'],
   menunggu: ['ditugaskan', 'gagal'],
   ditugaskan: ['menuju_lokasi', 'selesai', 'gagal'],
-  menuju_lokasi: ['barang_diambil', 'barang_diantar', 'gagal'],
+  menuju_lokasi: ['menuju_laundry', 'barang_diambil', 'barang_diantar', 'selesai', 'gagal'],
+  menuju_laundry: ['pakaian_sampai_laundry', 'gagal'],
+  pakaian_sampai_laundry: ['selesai', 'gagal'],
   barang_diambil: ['selesai', 'gagal'],
   barang_diantar: ['selesai', 'gagal'],
   selesai: [],
@@ -60,7 +63,12 @@ const allowedStatuses = computed<DeliveryStatus[]>(() => {
     // Status `ditugaskan` membutuhkan kurir yang sudah ditetapkan.
     if (next === 'ditugaskan' && !task.kurir) return false
     // Hanya tampilkan status yang sesuai jenis tugas.
-    if (next === 'barang_diambil' && task.jenis_antar_jemput !== 'penjemputan') return false
+    if (
+      ['barang_diambil', 'menuju_laundry', 'pakaian_sampai_laundry'].includes(next)
+      && task.jenis_antar_jemput !== 'penjemputan'
+    ) {
+      return false
+    }
     if (next === 'barang_diantar' && task.jenis_antar_jemput !== 'pengantaran') return false
     return true
   })

@@ -20,6 +20,7 @@ import type {
   PaymentMethodApi,
 } from '@/services/dashboard'
 import { formatCompactCurrency, formatCurrency, formatDateTime, formatNumber } from '@/utils/format'
+import { whatsappLink } from '@/utils/whatsapp'
 import type {
   ActivityItem,
   ActivityStat,
@@ -27,6 +28,7 @@ import type {
   CourierTask,
   EmployeeActivityItem,
   ExpenseItem,
+  LandingRequestItem,
   LaundryStatus,
   MetricItem,
   OrderItem,
@@ -56,6 +58,8 @@ const orderStatusToLaundryStatus = (status: string): LaundryStatus => {
       return 'finishing'
     case 'selesai':
       return 'selesai'
+    case 'dibatalkan':
+      return 'dibatalkan'
     default:
       return 'menunggu'
   }
@@ -368,6 +372,7 @@ export const mapTasks = (tasks: DashboardTaskApi[]): CourierTask[] =>
     type: taskTypeOf(task),
     customer: taskCustomer(task),
     phone: taskPhone(task),
+    waLink: whatsappLink(taskPhone(task)),
     address: task.alamat_tujuan || '-',
     schedule: formatDateTime(task.jadwal),
     status: task.status_antar_jemput as CourierTask['status'],
@@ -393,6 +398,20 @@ export const mapPickupRequests = (tasks: DashboardTaskApi[]): PickupRequestItem[
     address: task.alamat_tujuan || '-',
     schedule: formatDateTime(task.jadwal),
     status: task.status_antar_jemput as PickupRequestItem['status'],
+  }))
+
+export const mapLandingRequests = (tasks: DashboardTaskApi[]): LandingRequestItem[] =>
+  tasks.map((task) => ({
+    id: String(task.id_antar_jemput),
+    taskNumber: `AJ-${task.id_antar_jemput}`,
+    customer: task.nama_penerima || '-',
+    phone: task.no_hp_penerima || '-',
+    waLink: whatsappLink(
+      task.no_hp_penerima,
+      'Halo, saya dari Pemuda Laundry. Saya ingin mengonfirmasi permintaan penjemputan Anda.'
+    ),
+    address: task.alamat_tujuan || '-',
+    createdAt: formatDateTime(task.created_at),
   }))
 
 const methodColors: Record<string, string> = {

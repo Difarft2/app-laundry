@@ -85,7 +85,6 @@ class RolePermissionTest extends TestCase
             'laundry.update',
             'delivery.assign',
             'delivery.update',
-            'settings.manage',
             'roles.manage',
         ];
 
@@ -95,6 +94,9 @@ class RolePermissionTest extends TestCase
                 "Admin tidak boleh memiliki {$permission}."
             );
         }
+
+        // Admin adalah satu-satunya role yang dapat mengedit pengaturan global.
+        $this->assertTrue($admin->hasPermissionTo('settings.manage'));
     }
 
     public function test_owner_cannot_create_orders_or_manage_master_data(): void
@@ -112,6 +114,7 @@ class RolePermissionTest extends TestCase
             'payment-methods.create',
             'payment-methods.update',
             'payment-methods.delete',
+            'settings.manage',
         ];
 
         foreach ($forbiddenPermissions as $permission) {
@@ -168,6 +171,7 @@ class RolePermissionTest extends TestCase
 
         $this->assertFalse($karyawan->hasPermissionTo('reports.view'));
         $this->assertFalse($karyawan->hasPermissionTo('users.view'));
+        $this->assertFalse($karyawan->hasPermissionTo('settings.manage'));
     }
 
     public function test_kurir_only_has_delivery_access(): void
@@ -191,6 +195,7 @@ class RolePermissionTest extends TestCase
             'users.view',
             'reports.view',
             'delivery.assign',
+            'settings.manage',
         ];
 
         foreach ($forbiddenPermissions as $permission) {

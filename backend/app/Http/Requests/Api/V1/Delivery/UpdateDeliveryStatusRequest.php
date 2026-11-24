@@ -18,9 +18,12 @@ class UpdateDeliveryStatusRequest extends FormRequest
             'status_antar_jemput' => [
                 'required',
                 Rule::in([
+                    'menunggu_verifikasi',
                     'menunggu',
                     'ditugaskan',
                     'menuju_lokasi',
+                    'menuju_laundry',
+                    'pakaian_sampai_laundry',
                     'barang_diambil',
                     'barang_diantar',
                     'selesai',

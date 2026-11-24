@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/select'
 import {
   ArrowRightIcon,
+  CallIcon,
   CheckIcon,
   HorizontalDotsIcon,
   InboxIcon,
@@ -49,8 +50,20 @@ import { useAuthStore } from '@/stores/auth'
 import type { PaginationMeta } from '@/types/auth'
 import type { DeliveryTask } from '@/types/delivery'
 import { formatDateTime } from '@/utils/format'
+import { whatsappLink } from '@/utils/whatsapp'
 
 const auth = useAuthStore()
+
+// Tugas dari landing tidak memiliki `pesanan`, jadi data pelanggan
+// diambil dari kolom penerima pada tugas itu sendiri.
+const customerName = (task: DeliveryTask): string =>
+  task.pesanan?.pelanggan.nama || task.nama_penerima || '—'
+
+const customerPhone = (task: DeliveryTask): string =>
+  task.pesanan?.pelanggan.no_hp || task.no_hp_penerima || '—'
+
+const customerWaLink = (task: DeliveryTask): string | null =>
+  whatsappLink(task.pesanan?.pelanggan.no_hp || task.no_hp_penerima)
 
 const tasks = ref<DeliveryTask[]>([])
 const meta = ref<PaginationMeta | null>(null)
@@ -388,11 +401,21 @@ onBeforeUnmount(() => {
 
                     <td class="px-5 py-4 lg:px-6">
                       <p class="text-sm text-gray-800 dark:text-white/90">
-                        {{ task.pesanan?.pelanggan.nama ?? '—' }}
+                        {{ customerName(task) }}
                       </p>
                       <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                        {{ task.pesanan?.pelanggan.no_hp ?? '—' }}
+                        {{ customerPhone(task) }}
                       </p>
+                      <a
+                        v-if="customerWaLink(task)"
+                        :href="customerWaLink(task) ?? '#'"
+                        target="_blank"
+                        rel="noopener"
+                        class="mt-1 inline-flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700 dark:text-green-400"
+                      >
+                        <CallIcon class="size-3.5" />
+                        WhatsApp
+                      </a>
                     </td>
 
                     <td class="max-w-64 px-5 py-4 lg:px-6">
@@ -425,7 +448,7 @@ onBeforeUnmount(() => {
                             variant="ghost"
                             size="icon-sm"
                             class="text-gray-500 dark:text-gray-400"
-                            :aria-label="`Aksi untuk ${task.pesanan?.kode_pesanan}`"
+                            :aria-label="`Aksi untuk ${customerName(task)}`"
                           >
                             <HorizontalDotsIcon class="size-5" />
                           </Button>
@@ -446,7 +469,7 @@ onBeforeUnmount(() => {
                           </DropdownMenuItem>
 
                           <DropdownMenuItem
-                            v-if="canAccept && task.status_antar_jemput === 'menunggu' && !task.kurir"
+                            v-if="canAccept && task.status_antar_jemput === 'menunggu' && (!task.kurir || isAssignedToMe(task))"
                             @select="acceptTask(task)"
                           >
                             <CheckIcon class="size-5" />

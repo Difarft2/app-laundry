@@ -13,6 +13,8 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   runtimeConfig: {
+    // Private: hanya bisa dibaca server Nitro, tidak pernah dikirim ke browser.
+    landingApiKey: '',
     public: {
       appName: 'Pemuda Laundry',
       appUrl: SITE_URL,

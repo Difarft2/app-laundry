@@ -2,6 +2,10 @@
 import { RouterLink } from 'vue-router'
 import GridShape from '@/components/common/CommonGridShape.vue'
 import ThemeToggler from '@/components/full-width-pages/auth/ThemeToggler.vue'
+import { useSettingsStore } from '@/stores/settings'
+import AppLogo from './AppLogo.vue'
+
+const settings = useSettingsStore()
 </script>
 
 <template>
@@ -18,32 +22,9 @@ import ThemeToggler from '@/components/full-width-pages/auth/ThemeToggler.vue'
 
           <div class="flex max-w-md flex-col items-center">
             <RouterLink to="/" class="mb-5 flex items-center gap-3">
-              <span
-                class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-theme-lg"
-              >
-                <svg viewBox="0 0 24 24" fill="none" class="size-7" aria-hidden="true">
-                  <rect
-                    x="3.75"
-                    y="2.75"
-                    width="16.5"
-                    height="18.5"
-                    rx="4"
-                    stroke="currentColor"
-                    stroke-width="1.6"
-                  />
-                  <circle cx="12" cy="13.5" r="4.25" stroke="currentColor" stroke-width="1.6" />
-                  <path
-                    d="M9 13.5c.8.9 1.8 1.35 3 1.35s2.2-.45 3-1.35"
-                    stroke="currentColor"
-                    stroke-width="1.6"
-                    stroke-linecap="round"
-                  />
-                  <circle cx="7.5" cy="6.5" r="1" fill="currentColor" />
-                  <rect x="14" y="5.5" width="3.5" height="2" rx="0.8" fill="currentColor" />
-                </svg>
-              </span>
+              <AppLogo size="lg" />
               <span class="text-left">
-                <span class="block text-lg font-bold text-white">Pemuda Laundry</span>
+                <span class="block text-lg font-bold text-white">{{ settings.namaApp }}</span>
                 <span class="block text-xs text-gray-400 dark:text-white/60">
                   Manajemen Operasional
                 </span>

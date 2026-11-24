@@ -3,9 +3,12 @@ import type { PaginationLinks, PaginationMeta } from './auth'
 export type DeliveryType = 'penjemputan' | 'pengantaran'
 
 export type DeliveryStatus =
+  | 'menunggu_verifikasi'
   | 'menunggu'
   | 'ditugaskan'
   | 'menuju_lokasi'
+  | 'menuju_laundry'
+  | 'pakaian_sampai_laundry'
   | 'barang_diambil'
   | 'barang_diantar'
   | 'selesai'
@@ -41,6 +44,7 @@ export interface DeliveryHistory {
 
 export interface DeliveryTask {
   id_antar_jemput: number
+  sumber: 'internal' | 'landing'
   jenis_antar_jemput: DeliveryType
   status_antar_jemput: DeliveryStatus
   alamat_tujuan: string

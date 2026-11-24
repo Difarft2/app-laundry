@@ -2,8 +2,11 @@
 import { computed, ref } from 'vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowRightIcon, InboxIcon, SearchIcon } from '@/icons/layout'
+import { ArrowRightIcon, CallIcon, InboxIcon, PrinterIcon, SearchIcon } from '@/icons/layout'
+import { normalizeApiError } from '@/services/http'
 import { formatCurrency } from '@/utils/format'
+import { printOrderReceipt } from '@/utils/order-receipt'
+import { whatsappLink } from '@/utils/whatsapp'
 import { laundryStatusMeta, paymentStatusMeta } from './status'
 import type { LaundryStatus, OrderItem } from './types'
 
@@ -20,6 +23,30 @@ const props = withDefaults(defineProps<RecentOrdersProps>(), {
 
 const search = ref('')
 const statusFilter = ref<'all' | LaundryStatus>('all')
+const printingId = ref<string | null>(null)
+const actionError = ref<string | null>(null)
+
+const customerWaLink = (order: OrderItem): string | null =>
+  whatsappLink(
+    order.phone,
+    `Halo, saya dari Pemuda Laundry. Saya ingin mengonfirmasi pesanan ${order.invoice} Anda.`
+  )
+
+const printReceipt = async (order: OrderItem): Promise<void> => {
+  actionError.value = null
+  printingId.value = order.id
+
+  try {
+    await printOrderReceipt({
+      id_pesanan: Number(order.id),
+      kode_pesanan: order.invoice,
+    })
+  } catch (error) {
+    actionError.value = normalizeApiError(error).message
+  } finally {
+    printingId.value = null
+  }
+}
 
 const filteredOrders = computed(() => {
   const keyword = search.value.trim().toLowerCase()
@@ -81,7 +108,7 @@ const filteredOrders = computed(() => {
     </div>
 
     <div class="custom-scrollbar mt-4 max-w-full overflow-x-auto">
-      <table class="min-w-[1040px] w-full">
+      <table class="min-w-[1240px] w-full">
         <thead class="border-y border-gray-100 dark:border-gray-800">
           <tr>
             <th class="py-3 pe-4 text-start text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -153,13 +180,30 @@ const filteredOrders = computed(() => {
               </Badge>
             </td>
             <td class="py-3.5 text-end">
-              <RouterLink
-                :to="`/orders/${order.id}`"
-                class="inline-flex size-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-white"
-                aria-label="Lihat detail pesanan"
-              >
-                <ArrowRightIcon class="size-4" />
-              </RouterLink>
+              <div class="flex flex-wrap items-center justify-end gap-1.5">
+                <Button v-if="customerWaLink(order)" as-child size="xs" variant="outline">
+                  <a :href="customerWaLink(order) ?? '#'" target="_blank" rel="noopener">
+                    <CallIcon class="size-3.5" />
+                    Hubungi pelanggan
+                  </a>
+                </Button>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  :disabled="printingId === order.id"
+                  @click="printReceipt(order)"
+                >
+                  <PrinterIcon class="size-3.5" />
+                  {{ printingId === order.id ? 'Menyiapkan...' : 'Cetak struk' }}
+                </Button>
+                <RouterLink
+                  :to="`/orders/${order.id}`"
+                  class="inline-flex size-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-white"
+                  aria-label="Lihat detail pesanan"
+                >
+                  <ArrowRightIcon class="size-4" />
+                </RouterLink>
+              </div>
             </td>
           </tr>
 
@@ -190,7 +234,8 @@ const filteredOrders = computed(() => {
       <p class="text-xs text-gray-500 dark:text-gray-400">
         Menampilkan {{ filteredOrders.length }} dari {{ props.orders.length }} pesanan terbaru
       </p>
-      <p v-if="error" class="text-xs text-error-500">{{ error }}</p>
+      <p v-if="actionError" class="text-xs text-error-500">{{ actionError }}</p>
+      <p v-else-if="error" class="text-xs text-error-500">{{ error }}</p>
       <p v-else-if="loading" class="text-xs text-gray-400 dark:text-gray-500">Memuat data…</p>
       <p v-else class="text-xs text-gray-400 dark:text-gray-500">Data langsung dari API</p>
     </div>

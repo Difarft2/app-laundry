@@ -11,6 +11,7 @@ class DeliveryTaskResource extends JsonResource
     {
         return [
             'id_antar_jemput' => $this->id_antar_jemput,
+            'sumber' => $this->sumber,
             'jenis_antar_jemput' => $this->jenis_antar_jemput,
             'status_antar_jemput' => $this->status_antar_jemput,
 

@@ -23,7 +23,15 @@ class DashboardController extends Controller
 {
     private const ROLES = ['owner', 'admin', 'karyawan', 'kurir'];
 
-    private const PENDING_DELIVERY_STATUSES = ['menunggu', 'ditugaskan', 'menuju_lokasi', 'barang_diambil', 'barang_diantar'];
+    private const PENDING_DELIVERY_STATUSES = [
+        'menunggu',
+        'ditugaskan',
+        'menuju_lokasi',
+        'menuju_laundry',
+        'pakaian_sampai_laundry',
+        'barang_diambil',
+        'barang_diantar',
+    ];
 
     public function index(Request $request): JsonResponse
     {
@@ -115,6 +123,17 @@ class DashboardController extends Controller
                     'active_tasks' => DeliveryTaskResource::collection($activeTasks)->resolve($request),
                     'history' => DeliveryTaskResource::collection($completedTasks)->resolve($request),
                     'pickup_requests' => DeliveryTaskResource::collection($pickupRequests)->resolve($request),
+                    'landing_requests' => $isCourier
+                        ? []
+                        : DeliveryTaskResource::collection(
+                            (clone $tasksQuery)
+                                ->with(['pesanan', 'kurir'])
+                                ->where('sumber', 'landing')
+                                ->where('status_antar_jemput', 'menunggu_verifikasi')
+                                ->latest('id_antar_jemput')
+                                ->limit(10)
+                                ->get()
+                        )->resolve($request),
                 ],
             ],
         ]);
@@ -425,10 +444,20 @@ class DashboardController extends Controller
         $deliveryHistory = RiwayatAntarJemput::with(['user.roles', 'antarJemput.pesanan']);
 
         if ($isCourier) {
-            $deliveryHistory->whereHas(
-                'antarJemput',
-                fn ($query) => $query->where('id_kurir', $request->user()->id)
-            );
+            $deliveryHistory
+                ->whereHas(
+                    'antarJemput',
+                    fn ($query) => $query->where('id_kurir', $request->user()->id)
+                )
+                // Riwayat verifikasi sengaja tidak ditampilkan ke kurir.
+                ->where(function ($query) {
+                    $query->whereNull('status_sebelumnya')
+                        ->orWhere('status_sebelumnya', '!=', 'menunggu_verifikasi');
+                })
+                ->where(function ($query) {
+                    $query->whereNull('status_selanjutnya')
+                        ->orWhere('status_selanjutnya', '!=', 'menunggu_verifikasi');
+                });
         }
 
         $activities = $activities->concat(
@@ -436,17 +465,22 @@ class DashboardController extends Controller
                 ->latest('tanggal_perubahan')
                 ->limit(5)
                 ->get()
-                ->map(fn ($item) => [
-                    'id' => 'delivery-' . $item->id_riwayat_antar_jemput,
-                    'type' => 'delivery',
-                    'title' => 'Tugas antar '
-                        . ($item->antarJemput?->pesanan?->kode_pesanan ?? '-')
-                        . ' diperbarui',
-                    'description' => $item->status_sebelumnya . ' → ' . $item->status_selanjutnya,
-                    'user' => $item->user?->name,
-                    'role' => $item->user?->roles->first()?->name,
-                    'time' => $item->tanggal_perubahan?->toIso8601String(),
-                ])
+                ->map(function ($item) {
+                    $task = $item->antarJemput;
+                    $jenis = $task?->jenis_antar_jemput === 'penjemputan' ? 'jemput' : 'antar';
+                    $referensi = $task?->pesanan?->kode_pesanan
+                        ?: ($task ? "AJ-{$task->id_antar_jemput}" : '-');
+
+                    return [
+                        'id' => 'delivery-' . $item->id_riwayat_antar_jemput,
+                        'type' => 'delivery',
+                        'title' => "Tugas {$jenis} {$referensi} diperbarui",
+                        'description' => $item->status_sebelumnya . ' → ' . $item->status_selanjutnya,
+                        'user' => $item->user?->name,
+                        'role' => $item->user?->roles->first()?->name,
+                        'time' => $item->tanggal_perubahan?->toIso8601String(),
+                    ];
+                })
         );
 
         return $activities

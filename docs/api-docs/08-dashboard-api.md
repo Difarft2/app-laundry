@@ -21,7 +21,7 @@ Data dibedakan berdasarkan role pengguna yang login:
 |---|---|
 | Owner | Seluruh pesanan, keuangan (termasuk pengeluaran), proses laundry, dan antar-jemput |
 | Admin | Seluruh pesanan, keuangan, proses laundry, dan antar-jemput (mode pantau, read-only) |
-| Karyawan | Data operasional pesanan, proses laundry, unpaid amount, dan antar-jemput |
+| Karyawan | Data operasional pesanan, proses laundry, unpaid amount, antar-jemput, dan permintaan kurir dari landing page |
 | Kurir | Hanya tugas miliknya dan tugas yang masih menunggu kurir; tidak ada data keuangan/pesanan |
 
 ## 2. Endpoint
@@ -136,7 +136,19 @@ Accept: application/json
     "delivery": {
       "active_tasks": [],
       "history": [],
-      "pickup_requests": []
+      "pickup_requests": [],
+      "landing_requests": [
+        {
+          "id_antar_jemput": 12,
+          "sumber": "landing",
+          "jenis_antar_jemput": "penjemputan",
+          "status_antar_jemput": "menunggu_verifikasi",
+          "nama_penerima": "Budi Santoso",
+          "no_hp_penerima": "081234567890",
+          "alamat_tujuan": "Jl. Mawar No. 12, Bojonegoro",
+          "created_at": "2026-11-24T10:15:00.000000Z"
+        }
+      ]
     }
   }
 }
@@ -171,12 +183,33 @@ Accept: application/json
   masih relevan bagi role yang login.
 - `recent.activities`: gabungan riwayat status pesanan, riwayat proses laundry,
   pembayaran, dan riwayat antar-jemput (maksimal 8 entri terbaru). Untuk kurir hanya
-  riwayat tugasnya sendiri. Field `role` diambil dari role user yang melakukan aksi.
+  riwayat tugasnya sendiri dan riwayat `menunggu_verifikasi` disembunyikan.
+  Tugas tanpa pesanan (landing) diberi judul `Tugas jemput AJ-<id> diperbarui`.
+  Field `role` diambil dari role user yang melakukan aksi.
 - `laundry.queue`: maksimal 10 pesanan aktif untuk antrean proses laundry. Kosong untuk kurir.
 - `delivery.active_tasks`: tugas dengan status `menunggu`, `ditugaskan`, `menuju_lokasi`,
-  `barang_diambil`, atau `barang_diantar`.
+  `menuju_laundry`, `pakaian_sampai_laundry`, `barang_diambil`, atau `barang_diantar`.
 - `delivery.history`: 10 tugas terakhir dengan status `selesai`.
 - `delivery.pickup_requests`: permintaan penjemputan dengan status `menunggu`.
+- `delivery.landing_requests`: permintaan dari landing page (`sumber = landing`)
+  dengan status `menunggu_verifikasi`, maksimal 10 entri terbaru. Kosong untuk
+  kurir. Panel karyawan memakai daftar ini untuk **Verifikasi / Tolak** dan
+  tombol WhatsApp konfirmasi ke pengirim form; proses selengkapnya ada di
+  [10-landing-delivery-api.md](./10-landing-delivery-api.md).
 
 Untuk kurir, semua daftar di atas dibatasi pada tugas miliknya ditambah tugas
-tanpa kurir yang masih berstatus `menunggu`.
+tanpa kurir yang masih berstatus `menunggu`. Status `menunggu_verifikasi`
+sengaja tidak termasuk, sehingga kurir baru melihat tugas setelah diverifikasi.
+Riwayat aktivitas kurir juga menyembunyikan transisi `menunggu_verifikasi`.
+
+### Aksi pada widget Pesanan Terbaru
+
+Pada dashboard karyawan, setiap baris pesanan menyediakan:
+
+- **Hubungi pelanggan**: tautan `https://wa.me/<no_hp>` dengan pesan konfirmasi
+  nomor nota. Tidak tampil bila nomor pelanggan kosong.
+- **Cetak struk**: memanggil `GET /orders/{id}/receipt` dan membuka PNG di tab
+  baru (atau mengunduhnya bila pop-up diblokir).
+- **Panah detail**: menuju halaman detail pesanan.
+
+Tombol **Hubungi pelanggan** juga tersedia di daftar dan detail pesanan.

@@ -125,6 +125,17 @@ a {
   color: var(--sky-500);
 }
 
+.btn-outline-light {
+  border: 1px solid rgb(255 255 255 / 85%);
+  background: rgb(255 255 255 / 10%);
+  color: #fff;
+}
+
+.btn-outline-light:hover {
+  background: #fff;
+  color: var(--sky-600);
+}
+
 /* Header */
 .site-header {
   position: fixed;
@@ -625,6 +636,157 @@ a {
 .wa-float:hover {
   background: var(--green-600);
   transform: scale(1.1);
+}
+
+/* Pesan Kurir Antar */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgb(17 24 39 / 65%);
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  width: 100%;
+  max-width: 32rem;
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  box-shadow: 0 25px 60px -15px rgb(15 23 42 / 45%);
+}
+
+.modal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.modal__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.modal__subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--gray-600);
+}
+
+.modal__close {
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  border-radius: 9999px;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal__close:hover {
+  background: var(--gray-50);
+  color: var(--gray-900);
+}
+
+.delivery-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.75rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.field > span {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  border: 1px solid var(--gray-100);
+  border-radius: 0.75rem;
+  background: var(--gray-50);
+  padding: 0.75rem 1rem;
+  font: inherit;
+  font-size: 0.9375rem;
+  color: var(--gray-900);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: var(--sky-400);
+  box-shadow: 0 0 0 3px rgb(14 165 233 / 15%);
+}
+
+.form-message {
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.form-message--error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.form-message--success {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.btn-secondary {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+.btn-secondary:hover {
+  background: var(--gray-50);
+}
+
+.btn-submit {
+  background: var(--sky-500);
+  color: #fff;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background: var(--sky-600);
+}
+
+.btn-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 /* Reveal on scroll (native scroll-driven animations) disabled for fidelity */

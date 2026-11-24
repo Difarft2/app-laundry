@@ -39,9 +39,10 @@ role dan permission terbaru.
 | Pembayaran | Lihat | Lihat | Lihat, catat | Tidak |
 | Pengeluaran | Lihat, catat/ubah/hapus | Lihat | Tidak | Tidak |
 | Proses laundry | Tidak | Lihat | Kelola | Tidak |
-| Antar-jemput | Lihat, tugaskan | Lihat | Lihat | **Terima tugas & kelola status** |
+| Antar-jemput | Lihat, tugaskan, verifikasi landing | Lihat, verifikasi landing | Lihat, **verifikasi/tolak landing** | **Terima tugas & kelola status** |
 | Laporan | Ya | Ya | Tidak | Tidak |
-| Pengaturan dan role | Ya | Tidak | Tidak | Tidak |
+| Pengaturan aplikasi | Tidak | Ya | Tidak | Tidak |
+| Role | Ya | Tidak | Tidak | Tidak |
 
 Aturan utama:
 
@@ -49,7 +50,9 @@ Aturan utama:
     pesanan) dan `payments.create` (mencatat pembayaran). Tombol **Scan QR
     pesanan** dan **Cetak struk** juga hanya muncul untuk karyawan.
 -   **Admin bersifat read-only untuk pesanan dan pembayaran**: hanya memiliki
-    `orders.view` dan `payments.view`.
+    `orders.view` dan `payments.view`. Admin adalah satu-satunya role dengan
+    `settings.manage`, sehingga dapat mengubah nama, versi, logo, dan nomor
+    laundry lewat menu **Pengaturan**.
 -   **Owner tidak dapat membuat atau mengubah data pesanan**, tetapi dapat
     melihat, mengubah status, dan menghapus pesanan. Untuk pembayaran, owner
     hanya dapat melihat riwayat (tanpa mencatat).
@@ -63,6 +66,12 @@ Aturan utama:
 -   **Kurir hanya memiliki akses antar-jemput** (`delivery.view` dan
     `delivery.update`), tanpa akses ke pesanan laundry, pembayaran, pengeluaran,
     layanan, pengguna, atau laporan.
+-   Pengaturan aplikasi bisa **dilihat** semua role lewat `GET /settings`
+    (untuk branding), tetapi hanya admin yang bisa mengubahnya.
+
+Footer seluruh dashboard menampilkan tahun berjalan, nama aplikasi, dan versi
+aplikasi. Widget sidebar **Status Outlet** digantikan **Status App** yang
+menampilkan status aktif, versi aplikasi, versi build, dan nomor laundry.
 
 Role `admin` tidak memiliki permission mutasi pesanan/pembayaran (read-only),
 tetapi tetap dapat mengelola master data layanan, waktu layanan, dan metode
@@ -75,7 +84,7 @@ diatur eksplisit di `RolePermissionSeeder`.
 |---|---|
 | Owner | Pendapatan, pengeluaran, metode pembayaran, pesanan terbaru, histori aktivitas karyawan, histori kurir, dan antar-jemput menunggu. |
 | Admin | Mode pemantauan read-only: pendapatan, pembayaran, pesanan terbaru, riwayat aktivitas, dan riwayat kurir. |
-| Karyawan | Aksi operasional: buat pesanan, antrean proses laundry, aktivitas proses, pesanan terbaru, pembayaran, dan antar-jemput. |
+| Karyawan | Aksi operasional: buat pesanan, antrean proses laundry, aktivitas proses, pesanan terbaru, pembayaran, antar-jemput, dan panel permintaan kurir dari website (verifikasi/tolak). |
 | Kurir | Tugas antar-jemput, aktivitas tugas, dan riwayat tugas. Tidak ada modul pesanan laundry. |
 
 Dashboard selalu mengikuti role akun yang sedang login. Tidak ada pratinjau
@@ -86,7 +95,7 @@ role, sehingga setiap akun hanya melihat tampilannya sendiri.
 - **Owner**: dashboard, riwayat pesanan, layanan, waktu layanan, metode
   pembayaran, riwayat pembayaran, pengguna, dan laporan.
 - **Admin**: dashboard, riwayat pesanan, layanan, waktu layanan, metode
-  pembayaran, riwayat pembayaran, pengguna, dan laporan.
+  pembayaran, riwayat pembayaran, pengguna, laporan, dan pengaturan aplikasi.
 - **Karyawan**: dashboard, pesanan, proses laundry, dan antar-jemput. Pada grup
   **Histori**, hanya **Riwayat Pembayaran** yang ditampilkan; menu Layanan,
   Waktu Layanan, dan Metode Pembayaran disembunyikan.

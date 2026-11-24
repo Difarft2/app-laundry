@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { pinia } from '@/stores'
 import { useAuthStore } from '@/stores/auth'
+import { useSettingsStore } from '@/stores/settings'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -108,6 +109,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/settings',
+      name: 'Settings',
+      component: () => import('../views/Settings/Index.vue'),
+      meta: {
+        title: 'Pengaturan',
+        permission: 'settings.manage',
+      },
+    },
+    {
       path: '/account',
       name: 'Account',
       component: () => import('../views/Account.vue'),
@@ -154,7 +164,8 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
-  document.title = to.meta.title ? `${to.meta.title} | Pemuda Laundry` : 'Pemuda Laundry'
+  const settings = useSettingsStore(pinia)
+  document.title = to.meta.title ? `${to.meta.title} | ${settings.namaApp}` : settings.namaApp
 
   const auth = useAuthStore(pinia)
 

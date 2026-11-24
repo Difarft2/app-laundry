@@ -18,9 +18,12 @@ use Illuminate\Support\Facades\DB;
 class DeliveryTaskController extends Controller
 {
     private const TRANSITIONS = [
+        'menunggu_verifikasi' => ['menunggu', 'gagal'],
         'menunggu' => ['ditugaskan', 'gagal'],
         'ditugaskan' => ['menuju_lokasi', 'selesai', 'gagal'],
-        'menuju_lokasi' => ['barang_diambil', 'barang_diantar', 'gagal'],
+        'menuju_lokasi' => ['menuju_laundry', 'barang_diambil', 'selesai', 'gagal'],
+        'menuju_laundry' => ['pakaian_sampai_laundry', 'gagal'],
+        'pakaian_sampai_laundry' => ['selesai', 'gagal'],
         'barang_diambil' => ['selesai', 'gagal'],
         'barang_diantar' => ['selesai', 'gagal'],
         'selesai' => [],
@@ -194,7 +197,8 @@ class DeliveryTaskController extends Controller
             'Tugas ini tidak lagi menunggu kurir.'
         );
         abort_if(
-            $deliveryTask->id_kurir !== null,
+            $deliveryTask->id_kurir !== null
+                && (int) $deliveryTask->id_kurir !== (int) $user->id,
             422,
             'Tugas ini sudah ditugaskan ke kurir lain.'
         );
@@ -205,7 +209,8 @@ class DeliveryTaskController extends Controller
                 ->firstOrFail();
 
             abort_if(
-                $task->status_antar_jemput !== 'menunggu' || $task->id_kurir !== null,
+                $task->status_antar_jemput !== 'menunggu'
+                    || ($task->id_kurir !== null && (int) $task->id_kurir !== (int) $user->id),
                 422,
                 'Tugas ini sudah diterima kurir lain.'
             );
@@ -236,7 +241,7 @@ class DeliveryTaskController extends Controller
      */
     private function completeOrder(AntarJemput $deliveryTask): bool
     {
-        if ($deliveryTask->jenis_antar_jemput !== 'pengantaran') {
+        if ($deliveryTask->jenis_antar_jemput !== 'pengantaran' || $deliveryTask->id_pesanan === null) {
             return false;
         }
 
@@ -266,6 +271,93 @@ class DeliveryTaskController extends Controller
         return true;
     }
 
+    /**
+     * Karyawan memverifikasi permintaan dari landing page agar bisa ditugaskan ke kurir.
+     */
+    public function verify(Request $request, AntarJemput $deliveryTask): JsonResponse
+    {
+        abort_unless(
+            $deliveryTask->status_antar_jemput === 'menunggu_verifikasi',
+            422,
+            'Permintaan ini sudah diverifikasi atau ditolak.'
+        );
+
+        DB::transaction(function () use ($deliveryTask) {
+            $task = AntarJemput::whereKey($deliveryTask->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            abort_if(
+                $task->status_antar_jemput !== 'menunggu_verifikasi',
+                422,
+                'Permintaan ini sudah diproses pengguna lain.'
+            );
+
+            $task->update(['status_antar_jemput' => 'menunggu']);
+
+            $task->riwayatAntarJemput()->create([
+                'id_user' => Auth::id(),
+                'status_sebelumnya' => 'menunggu_verifikasi',
+                'status_selanjutnya' => 'menunggu',
+                'keterangan' => 'Permintaan landing diverifikasi.',
+                'tanggal_perubahan' => now(),
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Permintaan diverifikasi. Tugas sekarang menunggu kurir.',
+            'data' => new DeliveryTaskResource($this->loadRelations($deliveryTask->refresh())),
+        ]);
+    }
+
+    /**
+     * Karyawan menolak permintaan landing yang datanya tidak valid.
+     */
+    public function reject(Request $request, AntarJemput $deliveryTask): JsonResponse
+    {
+        abort_unless(
+            $deliveryTask->status_antar_jemput === 'menunggu_verifikasi',
+            422,
+            'Permintaan ini sudah diverifikasi atau ditolak.'
+        );
+
+        $validated = $request->validate([
+            'keterangan' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        DB::transaction(function () use ($deliveryTask, $validated) {
+            $task = AntarJemput::whereKey($deliveryTask->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            abort_if(
+                $task->status_antar_jemput !== 'menunggu_verifikasi',
+                422,
+                'Permintaan ini sudah diproses pengguna lain.'
+            );
+
+            $task->update([
+                'status_antar_jemput' => 'gagal',
+                'tanggal_selesai' => now(),
+            ]);
+
+            $task->riwayatAntarJemput()->create([
+                'id_user' => Auth::id(),
+                'status_sebelumnya' => 'menunggu_verifikasi',
+                'status_selanjutnya' => 'gagal',
+                'keterangan' => $validated['keterangan'] ?? 'Permintaan landing ditolak.',
+                'tanggal_perubahan' => now(),
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Permintaan ditolak.',
+            'data' => new DeliveryTaskResource($this->loadRelations($deliveryTask->refresh())),
+        ]);
+    }
+
     public function assign(AssignCourierRequest $request, AntarJemput $deliveryTask): JsonResponse
     {
         $newCourier = $request->validated('id_kurir');
@@ -287,11 +379,24 @@ class DeliveryTaskController extends Controller
         }
 
         $statusLama = $deliveryTask->status_antar_jemput;
-        $statusBaru = $newCourier !== null ? 'ditugaskan' : 'menunggu';
+        $isLandingPickup = $deliveryTask->sumber === 'landing'
+            && $deliveryTask->jenis_antar_jemput === 'penjemputan';
+
+        // Penjemputan dari landing langsung berjalan menuju lokasi setelah
+        // kurir ditugaskan. Tugas internal tetap menunggu konfirmasi kurir.
+        if ($newCourier === null) {
+            $statusBaru = 'menunggu';
+        } elseif ($isLandingPickup) {
+            $statusBaru = 'menuju_lokasi';
+        } else {
+            $statusBaru = $statusLama !== 'menunggu' ? 'ditugaskan' : 'menunggu';
+        }
 
         $kurir = $newCourier !== null ? User::find($newCourier) : null;
         $keterangan = $kurir
-            ? "Kurir ditugaskan: {$kurir->name}."
+            ? $isLandingPickup
+                ? "Kurir ditugaskan: {$kurir->name}. Menuju lokasi penjemputan."
+                : "Kurir ditugaskan: {$kurir->name}. Menunggu konfirmasi kurir."
             : 'Penugasan kurir dibatalkan.';
 
         DB::transaction(function () use (
@@ -354,12 +459,12 @@ class DeliveryTaskController extends Controller
         }
 
         if (
-            $statusBaru === 'barang_diambil'
+            in_array($statusBaru, ['barang_diambil', 'menuju_laundry', 'pakaian_sampai_laundry'], true)
             && $deliveryTask->jenis_antar_jemput !== 'penjemputan'
         ) {
             return response()->json([
                 'success' => false,
-                'message' => 'Status barang diambil hanya untuk tugas penjemputan.',
+                'message' => 'Status ini hanya untuk tugas penjemputan.',
             ], 422);
         }
 
