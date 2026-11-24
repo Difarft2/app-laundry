@@ -17,9 +17,12 @@ const props = withDefaults(defineProps<CourierTasksProps>(), {
 })
 
 const actionLabel: Record<CourierTaskStatus, string> = {
-  menunggu: 'Lihat tugas',
+  menunggu_verifikasi: 'Lihat tugas',
+  menunggu: 'Lihat & terima',
   ditugaskan: 'Lihat tugas',
   menuju_lokasi: 'Lihat tugas',
+  menuju_laundry: 'Lihat tugas',
+  pakaian_sampai_laundry: 'Lihat tugas',
   barang_diambil: 'Lihat tugas',
   barang_diantar: 'Lihat tugas',
   selesai: 'Lihat tugas',
@@ -35,7 +38,7 @@ const actionLabel: Record<CourierTaskStatus, string> = {
       <div>
         <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Tugas Aktif</h3>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Penjemputan dan pengantaran yang ditugaskan kepada Anda.
+          Tugas Anda dan penjemputan/pengantaran yang siap diambil.
         </p>
       </div>
       <Badge color="primary" size="sm">{{ props.tasks.length }} tugas</Badge>
@@ -90,6 +93,17 @@ const actionLabel: Record<CourierTaskStatus, string> = {
           >
             <CallIcon class="size-4" />
             {{ task.phone }}
+          </a>
+
+          <a
+            v-if="task.waLink"
+            :href="task.waLink"
+            target="_blank"
+            rel="noopener"
+            class="inline-flex items-center gap-1.5 text-xs font-medium text-green-600 hover:text-green-700 dark:text-green-400"
+          >
+            <CallIcon class="size-4" />
+            WhatsApp
           </a>
 
           <Button as-child size="xs">

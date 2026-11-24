@@ -39,6 +39,7 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components
 import { ORDER_STATUS_OPTIONS, orderStatusColor, orderStatusLabel } from '@/constants/orders'
 import {
   ArrowRightIcon,
+  CallIcon,
   DollarIcon,
   HorizontalDotsIcon,
   InboxIcon,
@@ -59,6 +60,7 @@ import { printOrderReceipt } from '@/utils/order-receipt'
 import type { PaginationMeta } from '@/types/auth'
 import type { Order, OrderStatus } from '@/types/order'
 import { formatCurrency } from '@/utils/format'
+import { whatsappLink } from '@/utils/whatsapp'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -187,6 +189,17 @@ const openDelete = (order: Order) => {
 const openPayment = (order: Order) => {
   paymentTarget.value = order
   paymentOpen.value = true
+}
+
+const customerWaLink = (order: Order): string | null =>
+  whatsappLink(
+    order.pelanggan?.no_hp,
+    `Halo, saya dari Pemuda Laundry. Saya ingin mengonfirmasi pesanan ${order.kode_pesanan} Anda.`
+  )
+
+const contactCustomer = (order: Order): void => {
+  const link = customerWaLink(order)
+  if (link) window.open(link, '_blank', 'noopener')
 }
 
 const printOrder = async (order: Order) => {
@@ -536,6 +549,14 @@ const remainingLabel = (order: Order): string =>
                           <DropdownMenuItem @select="printOrder(order)">
                             <PrinterIcon class="size-5" />
                             Cetak struk
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            v-if="customerWaLink(order)"
+                            @select="contactCustomer(order)"
+                          >
+                            <CallIcon class="size-5" />
+                            Hubungi pelanggan
                           </DropdownMenuItem>
 
                           <DropdownMenuItem

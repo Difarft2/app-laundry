@@ -106,6 +106,7 @@ export interface DashboardQueueApi {
 
 export interface DashboardTaskApi {
   id_antar_jemput: number
+  sumber: 'internal' | 'landing'
   jenis_antar_jemput: 'penjemputan' | 'pengantaran'
   status_antar_jemput: string
   alamat_tujuan: string
@@ -114,6 +115,8 @@ export interface DashboardTaskApi {
   jadwal: string | null
   tanggal_selesai: string | null
   catatan: string | null
+  created_at: string
+  updated_at: string
   kurir?: { id: number; name: string; no_hp: string } | null
   pesanan?: {
     id_pesanan: number
@@ -149,6 +152,7 @@ export interface DashboardApi {
       active_tasks: DashboardTaskApi[]
       history: DashboardTaskApi[]
       pickup_requests: DashboardTaskApi[]
+      landing_requests: DashboardTaskApi[]
     }
   }
 }

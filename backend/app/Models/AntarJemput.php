@@ -18,6 +18,7 @@ class AntarJemput extends Model
     protected $fillable = [
         'id_pesanan',
         'id_kurir',
+        'sumber',
         'jenis_antar_jemput',
         'status_antar_jemput',
         'alamat_tujuan',

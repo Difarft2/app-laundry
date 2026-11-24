@@ -6,14 +6,17 @@ export type MetricTone = 'brand' | 'info' | 'success' | 'warning' | 'error' | 'g
 
 export type BadgeTone = 'primary' | 'success' | 'error' | 'warning' | 'info' | 'gray'
 
-export type LaundryStatus = 'menunggu' | 'dicuci' | 'dikeringkan' | 'finishing' | 'selesai'
+export type LaundryStatus = 'menunggu' | 'dicuci' | 'dikeringkan' | 'finishing' | 'selesai' | 'dibatalkan'
 
 export type PaymentStatus = 'belum_dibayar' | 'belum_lunas' | 'lunas'
 
 export type CourierTaskStatus =
+  | 'menunggu_verifikasi'
   | 'menunggu'
   | 'ditugaskan'
   | 'menuju_lokasi'
+  | 'menuju_laundry'
+  | 'pakaian_sampai_laundry'
   | 'barang_diambil'
   | 'barang_diantar'
   | 'selesai'
@@ -117,6 +120,7 @@ export interface CourierTask {
   type: CourierTaskType
   customer: string
   phone: string
+  waLink: string | null
   address: string
   schedule: string
   status: CourierTaskStatus
@@ -140,4 +144,14 @@ export interface PickupRequestItem {
   address: string
   schedule: string
   status: CourierTaskStatus
+}
+
+export interface LandingRequestItem {
+  id: string
+  taskNumber: string
+  customer: string
+  phone: string
+  waLink: string | null
+  address: string
+  createdAt: string
 }

@@ -7,13 +7,25 @@ import AssignCourierDialog from '@/components/main/courier/AssignCourierDialog.v
 import UpdateDeliveryStatusDialog from '@/components/main/courier/UpdateDeliveryStatusDialog.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowLeftIcon, CheckIcon, LoaderCircleIcon, PencilIcon } from '@/icons/layout'
+import { ArrowLeftIcon, CallIcon, CheckIcon, LoaderCircleIcon, PencilIcon } from '@/icons/layout'
 import { deliveryStatusMeta } from '@/constants/delivery'
 import { deliveryApi } from '@/services/delivery'
 import { normalizeApiError } from '@/services/http'
 import { useAuthStore } from '@/stores/auth'
 import type { DeliveryTask } from '@/types/delivery'
 import { formatCurrency, formatDateTime } from '@/utils/format'
+import { whatsappLink } from '@/utils/whatsapp'
+
+// Tugas penjemputan dari landing tidak memiliki `pesanan`, jadi data
+// pelanggan memakai kolom penerima pada tugas tersebut.
+const customerName = (task: DeliveryTask): string =>
+  task.pesanan?.pelanggan.nama || task.nama_penerima || '—'
+
+const customerPhone = (task: DeliveryTask): string =>
+  task.pesanan?.pelanggan.no_hp || task.no_hp_penerima || '—'
+
+const customerWaLink = (task: DeliveryTask): string | null =>
+  whatsappLink(task.pesanan?.pelanggan.no_hp || task.no_hp_penerima)
 
 const route = useRoute()
 const router = useRouter()
@@ -45,7 +57,7 @@ const canAcceptNow = computed(
   () =>
     canAccept.value
     && task.value?.status_antar_jemput === 'menunggu'
-    && task.value.kurir === null,
+    && (task.value.kurir === null || isAssignedToMe.value),
 )
 
 const load = async (): Promise<void> => {
@@ -83,7 +95,7 @@ const acceptTask = async () => {
   try {
     const updated = await deliveryApi.accept(task.value.id_antar_jemput)
     await handleUpdated(
-      `Tugas ${updated.pesanan?.kode_pesanan ?? ''} diterima. Status sekarang proses antar.`,
+      `Tugas ${updated.pesanan?.kode_pesanan ?? `#${updated.id_antar_jemput}`} diterima. Status sekarang proses antar.`,
     )
   } catch (error) {
     loadError.value = normalizeApiError(error).message
@@ -148,6 +160,12 @@ const acceptTask = async () => {
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
+              <Button v-if="customerWaLink(task)" as-child variant="outline" size="sm">
+                <a :href="customerWaLink(task) ?? '#'" target="_blank" rel="noopener">
+                  <CallIcon class="size-4" />
+                  WhatsApp pelanggan
+                </a>
+              </Button>
               <Button v-if="canAcceptNow" size="sm" @click="acceptTask">
                 <CheckIcon class="size-4" />
                 Terima tugas
@@ -167,10 +185,10 @@ const acceptTask = async () => {
             <div>
               <dt class="text-xs text-gray-500 dark:text-gray-400">Pelanggan</dt>
               <dd class="mt-1 text-sm font-medium text-gray-800 dark:text-white/90">
-                {{ task.pesanan?.pelanggan.nama ?? '—' }}
+                {{ customerName(task) }}
               </dd>
               <dd class="text-xs text-gray-500 dark:text-gray-400">
-                {{ task.pesanan?.pelanggan.no_hp ?? '—' }}
+                {{ customerPhone(task) }}
               </dd>
             </div>
             <div>

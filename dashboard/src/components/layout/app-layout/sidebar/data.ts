@@ -4,6 +4,7 @@ import {
   CartIcon,
   ClockIcon,
   DollarIcon,
+  GearIcon,
   LayoutGridIcon,
   TagIcon,
   TruckDeliveryIcon,
@@ -83,5 +84,11 @@ export const othersItems: NavItem[] = [
     name: 'Laporan & Histori',
     path: '/reports',
     permission: 'reports.view',
+  },
+  {
+    icon: GearIcon,
+    name: 'Pengaturan',
+    path: '/settings',
+    permission: 'settings.manage',
   },
 ]

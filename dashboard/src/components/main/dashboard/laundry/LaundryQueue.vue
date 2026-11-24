@@ -27,6 +27,7 @@ const stepIndex = (status: LaundryStatus): number => {
     dikeringkan: 1,
     finishing: 2,
     selesai: 3,
+    dibatalkan: -1,
   }
   return map[status]
 }

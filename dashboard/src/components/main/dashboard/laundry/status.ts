@@ -18,6 +18,7 @@ export const laundryStatusMeta: Record<LaundryStatus, { label: string; color: Ba
   dikeringkan: { label: 'Dikeringkan', color: 'info' },
   finishing: { label: 'Finishing', color: 'warning' },
   selesai: { label: 'Pesanan selesai', color: 'success' },
+  dibatalkan: { label: 'Dibatalkan', color: 'error' },
 }
 
 export const paymentStatusMeta: Record<PaymentStatus, { label: string; color: BadgeTone }> = {
@@ -27,9 +28,12 @@ export const paymentStatusMeta: Record<PaymentStatus, { label: string; color: Ba
 }
 
 export const courierStatusMeta: Record<CourierTaskStatus, { label: string; color: BadgeTone }> = {
+  menunggu_verifikasi: { label: 'Menunggu verifikasi', color: 'warning' },
   menunggu: { label: 'Menunggu kurir', color: 'gray' },
   ditugaskan: { label: 'Proses antar', color: 'info' },
   menuju_lokasi: { label: 'Menuju lokasi', color: 'warning' },
+  menuju_laundry: { label: 'Pesanan menuju laundry', color: 'info' },
+  pakaian_sampai_laundry: { label: 'Pakaian sampai di laundry', color: 'success' },
   barang_diambil: { label: 'Barang diambil', color: 'info' },
   barang_diantar: { label: 'Barang diantar', color: 'info' },
   selesai: { label: 'Selesai diantar', color: 'success' },
@@ -56,7 +60,7 @@ export const roleMeta: Record<DashboardRole, { label: string; description: strin
   },
   kurir: {
     label: 'Kurir',
-    description: 'Hanya tugas penjemputan dan pengantaran yang ditugaskan kepada Anda.',
+    description: 'Tugas penjemputan dan pengantaran Anda, serta tugas yang siap diambil.',
   },
 }
 

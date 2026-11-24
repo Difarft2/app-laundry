@@ -118,6 +118,46 @@ const faqItems = [
 ]
 
 const openHours = 'Buka setiap hari dan libur pada tanggal merah selain Minggu'
+
+const deliveryForm = reactive({ nama: '', telepon: '', alamat: '' })
+const deliveryOpen = ref(false)
+const deliverySubmitting = ref(false)
+const deliveryError = ref<string | null>(null)
+const deliverySuccess = ref<string | null>(null)
+
+const openDeliveryForm = () => {
+  deliveryError.value = null
+  deliverySuccess.value = null
+  deliveryOpen.value = true
+}
+
+const closeDeliveryForm = () => {
+  if (deliverySubmitting.value) return
+  deliveryOpen.value = false
+}
+
+const submitDeliveryForm = async () => {
+  deliveryError.value = null
+  deliverySuccess.value = null
+  deliverySubmitting.value = true
+
+  try {
+    const response = await $fetch<{ message: string }>('/api/delivery-requests', {
+      method: 'POST',
+      body: { ...deliveryForm },
+    })
+
+    deliverySuccess.value = response.message
+    deliveryForm.nama = ''
+    deliveryForm.telepon = ''
+    deliveryForm.alamat = ''
+  } catch (error: unknown) {
+    const failure = error as { statusMessage?: string }
+    deliveryError.value = failure.statusMessage ?? 'Permintaan gagal dikirim. Silakan coba lagi.'
+  } finally {
+    deliverySubmitting.value = false
+  }
+}
 </script>
 
 <template>
@@ -185,6 +225,9 @@ const openHours = 'Buka setiap hari dan libur pada tanggal merah selain Minggu'
               Order Sekarang
             </a>
             <a href="#harga" class="btn btn-ghost">Lihat Harga</a>
+            <button type="button" class="btn btn-outline-light" @click="openDeliveryForm">
+              Pesan Kurir Antar
+            </button>
           </div>
         </div>
 
@@ -372,5 +415,85 @@ const openHours = 'Buka setiap hari dan libur pada tanggal merah selain Minggu'
         />
       </svg>
     </a>
+
+    <div v-if="deliveryOpen" class="modal-backdrop" @click.self="closeDeliveryForm">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delivery-title">
+        <div class="modal__head">
+          <div>
+            <p class="eyebrow">Antar-Jemput</p>
+            <h2 id="delivery-title" class="modal__title">Pesan Kurir Antar</h2>
+            <p class="modal__subtitle">
+              Isi data di bawah ini. Tim kami akan memverifikasi permintaan sebelum kurir
+              ditugaskan.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="modal__close"
+            aria-label="Tutup formulir"
+            @click="closeDeliveryForm"
+          >
+            ×
+          </button>
+        </div>
+
+        <form class="delivery-form" @submit.prevent="submitDeliveryForm">
+          <label class="field">
+            <span>Nama</span>
+            <input
+              v-model="deliveryForm.nama"
+              type="text"
+              name="nama"
+              autocomplete="name"
+              placeholder="Nama lengkap"
+              maxlength="150"
+              required
+            />
+          </label>
+
+          <label class="field">
+            <span>Nomor Telepon</span>
+            <input
+              v-model="deliveryForm.telepon"
+              type="tel"
+              name="telepon"
+              inputmode="tel"
+              autocomplete="tel"
+              placeholder="Contoh: 081234567890"
+              maxlength="20"
+              required
+            />
+          </label>
+
+          <label class="field">
+            <span>Alamat Penjemputan</span>
+            <textarea
+              v-model="deliveryForm.alamat"
+              name="alamat"
+              rows="3"
+              placeholder="Alamat lengkap untuk penjemputan"
+              maxlength="1000"
+              required
+            />
+          </label>
+
+          <p v-if="deliveryError" class="form-message form-message--error" role="alert">
+            {{ deliveryError }}
+          </p>
+          <p v-if="deliverySuccess" class="form-message form-message--success" role="status">
+            {{ deliverySuccess }}
+          </p>
+
+          <div class="modal__actions">
+            <button type="button" class="btn btn-secondary" @click="closeDeliveryForm">
+              Tutup
+            </button>
+            <button type="submit" class="btn btn-submit" :disabled="deliverySubmitting">
+              {{ deliverySubmitting ? 'Mengirim...' : 'Kirim Permintaan' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>

@@ -18,6 +18,16 @@ export const deliveryApi = {
     return data.data
   },
 
+  async verify(id: number): Promise<DeliveryTask> {
+    const { data } = await http.patch(`/delivery-tasks/${id}/verify`)
+    return data.data
+  },
+
+  async reject(id: number, keterangan?: string): Promise<DeliveryTask> {
+    const { data } = await http.patch(`/delivery-tasks/${id}/reject`, { keterangan })
+    return data.data
+  },
+
   async assign(id: number, id_kurir: number | null): Promise<DeliveryTask> {
     const { data } = await http.patch(`/delivery-tasks/${id}/assign`, { id_kurir })
     return data.data

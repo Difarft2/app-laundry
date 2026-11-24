@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { useAuthStore } from '@/stores/auth'
 import { cn } from '@/utils/cn'
+import AppFooter from './AppFooter.vue'
 import AppHeader from './app-layout/header/AppHeader.vue'
 import AppSidebar from './app-layout/sidebar/AppSidebar.vue'
 
@@ -24,7 +25,7 @@ const isAiRoute = computed(
 const routeSpecificStyles = computed(() =>
   isAiRoute.value
     ? 'flex-1 min-h-0 flex flex-col'
-    : 'p-4 mx-auto w-full max-w-(--breakpoint-2xl) md:p-6',
+    : 'flex-1 p-4 mx-auto w-full max-w-(--breakpoint-2xl) md:p-6',
 )
 </script>
 
@@ -38,6 +39,8 @@ const routeSpecificStyles = computed(() =>
       <div :class="routeSpecificStyles">
         <slot />
       </div>
+
+      <AppFooter />
     </SidebarInset>
   </SidebarProvider>
 </template>

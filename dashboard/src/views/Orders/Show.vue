@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   ArrowLeftIcon,
+  CallIcon,
   DollarIcon,
   LoaderCircleIcon,
   PencilIcon,
@@ -27,6 +28,7 @@ import { hasActiveDelivery } from '@/utils/order-delivery'
 import { printOrderReceipt } from '@/utils/order-receipt'
 import type { Order } from '@/types/order'
 import { formatCurrency } from '@/utils/format'
+import { whatsappLink } from '@/utils/whatsapp'
 
 const route = useRoute()
 const router = useRouter()
@@ -119,6 +121,13 @@ const handlePaymentSaved = async (message: string) => {
   await load()
 }
 
+const customerWaLink = computed(() =>
+  whatsappLink(
+    order.value?.pelanggan?.no_hp,
+    `Halo, saya dari Pemuda Laundry. Saya ingin mengonfirmasi pesanan ${order.value?.kode_pesanan ?? ''} Anda.`
+  ),
+)
+
 const printOrder = async () => {
   if (!order.value) return
 
@@ -202,6 +211,12 @@ const handleDeliveryCreated = async (message: string) => {
               <Button variant="outline" size="sm" @click="printOrder">
                 <PrinterIcon class="size-4" />
                 Cetak struk
+              </Button>
+              <Button v-if="customerWaLink" as-child variant="outline" size="sm">
+                <a :href="customerWaLink" target="_blank" rel="noopener">
+                  <CallIcon class="size-4" />
+                  Hubungi pelanggan
+                </a>
               </Button>
               <Button
                 v-if="canRecordPayment && order.sisa_pembayaran > 0 && order.status_pesanan !== 'dibatalkan'"

@@ -9,6 +9,7 @@ import DailyActivity from '@/components/main/dashboard/laundry/DailyActivity.vue
 import DashboardHeader from '@/components/main/dashboard/laundry/DashboardHeader.vue'
 import EmployeeActivity from '@/components/main/dashboard/laundry/EmployeeActivity.vue'
 import ExpenseBreakdown from '@/components/main/dashboard/laundry/ExpenseBreakdown.vue'
+import LandingDeliveryRequests from '@/components/main/dashboard/laundry/LandingDeliveryRequests.vue'
 import LaundryQueue from '@/components/main/dashboard/laundry/LaundryQueue.vue'
 import MetricsGrid from '@/components/main/dashboard/laundry/MetricsGrid.vue'
 import PaymentBreakdown from '@/components/main/dashboard/laundry/PaymentBreakdown.vue'
@@ -23,12 +24,15 @@ import {
   mapCourierHistory,
   mapEmployeeActivities,
   mapExpenses,
+  mapLandingRequests,
   mapMetrics,
   mapOrders,
   mapPickupRequests,
   mapQueue,
   mapTasks,
 } from '@/components/main/dashboard/laundry/mapping'
+import { deliveryApi } from '@/services/delivery'
+import { normalizeApiError } from '@/services/http'
 import { CameraIcon } from '@/icons/layout'
 import { useAuthStore } from '@/stores/auth'
 import { useDashboardStore } from '@/stores/dashboard'
@@ -37,6 +41,8 @@ const auth = useAuthStore()
 const dashboard = useDashboardStore()
 const scanOpen = ref(false)
 const scanMessage = ref<string | null>(null)
+const reviewMessage = ref<string | null>(null)
+const reviewBusy = ref<number | null>(null)
 
 onMounted(() => {
   void dashboard.load()
@@ -66,6 +72,7 @@ const canViewDelivery = computed(() => auth.hasPermission('delivery.view'))
 const canViewUsers = computed(() => auth.hasPermission('users.view'))
 const canCreateOrder = computed(() => auth.hasPermission('orders.create'))
 const canUpdateStatus = computed(() => auth.hasPermission('orders.update-status'))
+const canVerifyDelivery = computed(() => auth.hasPermission('delivery.verify'))
 
 const emptyMetrics: DashboardMetricsApi = {
   totalOrders: 0,
@@ -104,6 +111,9 @@ const courierHistory = computed(() => mapCourierHistory(payload.value?.delivery.
 const pickupRequests = computed(() =>
   mapPickupRequests(payload.value?.delivery.pickup_requests ?? []),
 )
+const landingRequests = computed(() =>
+  mapLandingRequests(payload.value?.delivery.landing_requests ?? []),
+)
 const expenses = computed(() => mapExpenses(payload.value?.charts.expenses ?? []))
 const expenseTotal = computed(() => metricsApi.value.expenses)
 
@@ -120,6 +130,27 @@ const activitySubtitle = computed(() => {
   if (isAdmin.value) return 'Riwayat perubahan data dan transaksi terbaru.'
   return 'Perubahan terbaru pada operasional laundry.'
 })
+
+const reviewLandingRequest = async (id: number, action: 'verify' | 'reject'): Promise<void> => {
+  reviewBusy.value = id
+  reviewMessage.value = null
+
+  try {
+    const task = action === 'verify'
+      ? await deliveryApi.verify(id)
+      : await deliveryApi.reject(id)
+
+    reviewMessage.value = action === 'verify'
+      ? `Permintaan ${task.id_antar_jemput} diverifikasi. Silakan tugaskan kurir.`
+      : `Permintaan ${task.id_antar_jemput} ditolak.`
+
+    await dashboard.refresh()
+  } catch (error) {
+    reviewMessage.value = normalizeApiError(error).message
+  } finally {
+    reviewBusy.value = null
+  }
+}
 </script>
 
 <template>
@@ -168,6 +199,14 @@ const activitySubtitle = computed(() => {
         class="rounded-xl border border-success-200 bg-success-50 px-5 py-3 text-sm text-success-700 dark:border-success-500/20 dark:bg-success-500/10 dark:text-success-400"
       >
         {{ scanMessage }}
+      </p>
+
+      <p
+        v-if="reviewMessage"
+        role="status"
+        class="rounded-xl border border-brand-200 bg-brand-50 px-5 py-3 text-sm text-brand-700 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-300"
+      >
+        {{ reviewMessage }}
       </p>
 
       <!-- Admin hanya memantau, tidak memiliki aksi operasional. -->
@@ -320,6 +359,16 @@ const activitySubtitle = computed(() => {
             />
           </div>
         </div>
+
+        <LandingDeliveryRequests
+          v-if="canVerifyDelivery"
+          :requests="landingRequests"
+          :loading="dashboard.loading"
+          :error="dashboard.error"
+          :busy-id="reviewBusy"
+          @verify="reviewLandingRequest($event, 'verify')"
+          @reject="reviewLandingRequest($event, 'reject')"
+        />
 
         <RecentOrders
           v-if="canViewOrders"

@@ -10,8 +10,11 @@ import { HorizontalDotsIcon, MenuTwoIcon, SearchIcon, XIcon } from '@/icons/layo
 import NotificationDropdown from '../../header/notification-dropdown/NotificationDropdown.vue'
 import ThemeToggleButton from '../../header/theme-toggler/ThemeToggler.vue'
 import UserDropdown from '../../header/user-dropdown/UserDropdown.vue'
+import { useSettingsStore } from '@/stores/settings'
 import { cn } from '@/utils/cn'
+import AppLogo from '../../AppLogo.vue'
 
+const settings = useSettingsStore()
 const inputRef = ref<InstanceType<typeof InputGroupInput> | null>(null)
 const isApplicationMenuOpen = ref(false)
 const { openMobile, toggleSidebar } = useSidebar()
@@ -57,29 +60,10 @@ onBeforeUnmount(() => {
         </Button>
 
         <RouterLink to="/" class="flex items-center gap-2 xl:hidden">
-          <span class="flex size-8 items-center justify-center rounded-lg bg-brand-500 text-white">
-            <svg viewBox="0 0 24 24" fill="none" class="size-5" aria-hidden="true">
-              <rect
-                x="3.75"
-                y="2.75"
-                width="16.5"
-                height="18.5"
-                rx="4"
-                stroke="currentColor"
-                stroke-width="1.6"
-              />
-              <circle cx="12" cy="13.5" r="4.25" stroke="currentColor" stroke-width="1.6" />
-              <path
-                d="M9 13.5c.8.9 1.8 1.35 3 1.35s2.2-.45 3-1.35"
-                stroke="currentColor"
-                stroke-width="1.6"
-                stroke-linecap="round"
-              />
-              <circle cx="7.5" cy="6.5" r="1" fill="currentColor" />
-              <rect x="14" y="5.5" width="3.5" height="2" rx="0.8" fill="currentColor" />
-            </svg>
+          <AppLogo size="sm" />
+          <span class="text-sm font-bold text-gray-800 dark:text-white">
+            {{ settings.namaApp }}
           </span>
-          <span class="text-sm font-bold text-gray-800 dark:text-white">Pemuda Laundry</span>
         </RouterLink>
 
         <Button

@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\DeliveryTaskController;
 use App\Http\Controllers\Api\V1\PengeluaranController;
+use App\Http\Controllers\Api\V1\LandingDeliveryController;
+use App\Http\Controllers\Api\V1\SettingController;
 
 Route::prefix('v1')->group(function () {
 
@@ -19,6 +21,13 @@ Route::prefix('v1')->group(function () {
         Route::post('/login', [AuthController::class, 'login'])
             ->middleware('throttle:5,1');
     });
+
+    // Landing page tidak punya login; akses dilindungi kunci rahasia bersama.
+    Route::post('/landing/delivery-requests', [LandingDeliveryController::class, 'store'])
+        ->middleware(['landing.key', 'throttle:10,1']);
+
+    // Branding aplikasi bersifat publik agar bisa dipakai halaman masuk.
+    Route::get('/settings', [SettingController::class, 'show']);
 
     // Authenticated routes
     Route::middleware('auth:sanctum')->group(function () {
@@ -33,6 +42,12 @@ Route::prefix('v1')->group(function () {
             Route::get('/me', [AuthController::class, 'me']);
             Route::put('/profile', [AuthController::class, 'updateProfile']);
             Route::put('/password', [AuthController::class, 'updatePassword']);
+        });
+
+        // Pengaturan global: hanya admin yang dapat mengubah.
+        Route::middleware('permission:settings.manage')->group(function () {
+            Route::put('/settings', [SettingController::class, 'update']);
+            Route::post('/settings/logo', [SettingController::class, 'uploadLogo']);
         });
 
         // User Management
@@ -187,6 +202,12 @@ Route::prefix('v1')->group(function () {
 
             Route::get('/{deliveryTask}', [DeliveryTaskController::class, 'show'])
                 ->middleware('permission:delivery.view');
+
+            Route::patch('/{deliveryTask}/verify', [DeliveryTaskController::class, 'verify'])
+                ->middleware('permission:delivery.verify');
+
+            Route::patch('/{deliveryTask}/reject', [DeliveryTaskController::class, 'reject'])
+                ->middleware('permission:delivery.verify');
 
             Route::patch('/{deliveryTask}/assign', [DeliveryTaskController::class, 'assign'])
                 ->middleware('permission:delivery.assign');
