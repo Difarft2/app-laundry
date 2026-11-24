@@ -49,6 +49,7 @@ class RolePermissionSeeder extends Seeder
             'service-times.create',
             'payment-methods.create',
             'finance.view',
+            'finance.manage',
         ] as $permission) {
             Permission::firstOrCreate([
                 'name' => $permission,
@@ -108,6 +109,7 @@ class RolePermissionSeeder extends Seeder
             'delivery.assign',
             'reports.view',
             'finance.view',
+            'finance.manage',
             'settings.manage',
             'roles.manage',
         ]);

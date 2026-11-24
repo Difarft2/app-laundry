@@ -62,6 +62,7 @@ Daftar permission:
 | GET | `/orders/{order}/receipt` | Cetak struk pesanan (PNG + QR) | `orders.view` |
 | PUT | `/orders/{order}` | Mengubah pesanan | `orders.update` |
 | PATCH | `/orders/{order}/status` | Mengubah status pesanan | `orders.update-status` |
+| POST | `/orders/{order}/delivery` | Membuat tugas pengantaran | `orders.update-status` |
 | DELETE | `/orders/{order}` | Menghapus pesanan | `orders.delete` |
 
 ---
@@ -95,12 +96,17 @@ GET /orders?search=Budi&status_pesanan=menunggu&per_page=10
 
 **Status Pesanan**
 
+> Pastikan `php artisan migrate` sudah dijalankan setelah mengambil branch ini.
+> Migration `2026_11_23_000000_extend_order_status_for_laundry_process` dan
+> migrasi lanjutan pada tanggal yang sama memperbarui enum `status_pesanan`.
+> Tanpa migrasi ini, MySQL menolak status baru seperti `dicuci` dengan error
+> `Data truncated for column 'status_pesanan'`.
+
 | Status | Keterangan |
 |---|---|
 | `menunggu` | Pesanan baru diterima |
 | `diproses` | Pesanan sedang diproses |
-| `siap_diambil` | Laundry sudah siap diambil |
-| `dalam_pengantaran` | Pesanan sedang diantar |
+| `siap_diambil` | Laundry sudah siap diambil, dapat dibuatkan tugas antar |
 | `selesai` | Pesanan selesai |
 | `dibatalkan` | Pesanan dibatalkan |
 
@@ -457,7 +463,6 @@ Status yang diperbolehkan:
 - `disetrika` (Di setrika)
 - `diproses`
 - `siap_diambil`
-- `dalam_pengantaran`
 - `selesai`
 - `dibatalkan`
 
@@ -604,6 +609,10 @@ Frontend harus memperhatikan hal-hal berikut:
     daftar pesanan, dan halaman detail pesanan. Ketiganya memakai endpoint
     `GET /orders/{order}/receipt`.
 12. Untuk scan QR, gunakan `GET /orders/lookup`; QR berisi `kode_pesanan` (bukan URL).
+13. Tombol **Antar** hanya muncul untuk pesanan `siap_diambil` yang belum punya tugas
+    pengantaran aktif. Tombol membuka dialog **Antar pesanan** untuk mengisi alamat
+    tujuan (diisi awal dari alamat pesanan). Setelah tugas dibuat, status pesanan
+    tetap `siap_diambil` sampai kurir menyelesaikan pengantaran.
 
 ---
 
@@ -659,6 +668,44 @@ Response berupa gambar PNG (`image/png`, 440&times;600 px) dengan header
 
 QR pada struk dapat di-scan dari dashboard karyawan, lalu aplikasi membuka
 rincian pesanan dan form ubah status beserta riwayatnya.
+
+---
+
+## 16. Buat Tugas Pengantaran dari Pesanan
+
+Membuat tugas `pengantaran` baru untuk pesanan yang sudah `siap_diambil`.
+Tombol **Antar** di menu aksi pesanan memakai endpoint ini.
+
+**Endpoint**
+
+```http
+POST /orders/{order}/delivery
+```
+
+**Permission:** `orders.update-status`
+
+**Request Body (opsional)**
+
+| Field | Tipe | Keterangan |
+|---|---|---|
+| `alamat_tujuan` | string | Alamat antar. Default: `pelanggan.alamat` pada pesanan |
+| `nama_penerima` | string | Default: `nama_pelanggan` pada pesanan |
+| `no_hp_penerima` | string | Default: `no_hp` pada pesanan |
+| `jadwal` | date | Jadwal antar |
+| `catatan` | string | Catatan untuk kurir |
+
+Frontend menampilkan dialog **Antar pesanan** dengan field alamat yang diisi awal
+dari `pelanggan.alamat`. Jika alamat pesanan kosong, user wajib mengisinya di
+dialog. Backend juga mengembalikan `422` bila alamat hasil input/fallback kosong.
+
+Tugas dibuat dengan `id_kurir = null` dan status `menunggu` (**Menunggu kurir**).
+Kurir menerima tugas lewat `PATCH /delivery-tasks/{id}/accept`, lalu statusnya
+menjadi `ditugaskan` (**Proses antar**). Saat kurir mengubah status menjadi
+`selesai` (**Selesai diantar**), backend otomatis mengubah `status_pesanan`
+menjadi `selesai` dan mencatatnya di `riwayat_status`.
+
+Jika sudah ada tugas pengantaran dengan status selain `selesai`/`gagal`,
+endpoint mengembalikan `422`.
 
 ---
 

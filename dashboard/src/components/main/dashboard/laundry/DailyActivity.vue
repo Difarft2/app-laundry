@@ -51,14 +51,14 @@ withDefaults(defineProps<DailyActivityProps>(), {
         <span
           :class="
             cn(
-              'absolute start-0 top-1.5 size-2.5 rounded-full ring-4 ring-white dark:ring-gray-900',
+              'absolute inset-s-0 top-1.5 size-2.5 rounded-full ring-4 ring-white dark:ring-gray-900',
               activityDotClasses[activity.tone],
             )
           "
         />
         <span
           v-if="activity !== activities[activities.length - 1]"
-          class="absolute start-[4.5px] top-5 h-[calc(100%-8px)] w-px bg-gray-100 dark:bg-gray-800"
+          class="absolute inset-s-[4.5px] top-5 h-[calc(100%-8px)] w-px bg-gray-100 dark:bg-gray-800"
           aria-hidden="true"
         />
         <p class="text-xs text-gray-400 dark:text-gray-500">{{ activity.time }}</p>

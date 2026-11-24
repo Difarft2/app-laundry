@@ -39,7 +39,7 @@ const emit = defineEmits<{
  */
 const TRANSITIONS: Record<DeliveryStatus, DeliveryStatus[]> = {
   menunggu: ['ditugaskan', 'gagal'],
-  ditugaskan: ['menuju_lokasi', 'gagal'],
+  ditugaskan: ['menuju_lokasi', 'selesai', 'gagal'],
   menuju_lokasi: ['barang_diambil', 'barang_diantar', 'gagal'],
   barang_diambil: ['selesai', 'gagal'],
   barang_diantar: ['selesai', 'gagal'],

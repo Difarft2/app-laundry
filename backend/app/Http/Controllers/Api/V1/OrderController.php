@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Order\StoreOrderRequest;
 use App\Http\Requests\Api\V1\Order\UpdateOrderRequest;
+use App\Http\Resources\Api\V1\DeliveryTaskResource;
 use App\Http\Resources\Api\V1\OrderResource;
 use App\Models\Layanan;
 use App\Models\MetodePembayaran;
@@ -28,7 +29,6 @@ class OrderController extends Controller
         'disetrika',
         'diproses',
         'siap_diambil',
-        'dalam_pengantaran',
         'selesai',
         'dibatalkan',
     ];
@@ -128,6 +128,7 @@ class OrderController extends Controller
             'pembayaran.metodePembayaran',
             'pembayaran.user',
             'riwayatStatus.user',
+            'antarJemput.kurir',
         ]);
 
         return new OrderResource($order);
@@ -166,6 +167,88 @@ class OrderController extends Controller
         return response($receipt->generate($order), 200)
             ->header('Content-Type', 'image/png')
             ->header('Content-Disposition', 'inline; filename="struk-' . $order->kode_pesanan . '.png"');
+    }
+
+    /**
+     * Buat tugas pengantaran dari pesanan yang sudah siap diambil.
+     *
+     * Tugas dibuat tanpa kurir agar tampil sebagai "menunggu kurir" dan
+     * diambil sendiri oleh kurir lewat endpoint accept.
+     */
+    public function createDelivery(Request $request, Pesanan $order)
+    {
+        $validated = $request->validate([
+            'alamat_tujuan' => ['nullable', 'string'],
+            'nama_penerima' => ['nullable', 'string', 'max:150'],
+            'no_hp_penerima' => ['nullable', 'string', 'max:20'],
+            'jadwal' => ['nullable', 'date'],
+            'catatan' => ['nullable', 'string'],
+        ]);
+
+        return DB::transaction(function () use ($validated, $order) {
+            $order = Pesanan::whereKey($order->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($order->status_pesanan !== 'siap_diambil') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pesanan hanya dapat diantar saat statusnya siap diambil.',
+                ], 422);
+            }
+
+            $tugasAktif = $order->antarJemput()
+                ->where('jenis_antar_jemput', 'pengantaran')
+                ->whereNotIn('status_antar_jemput', ['selesai', 'gagal'])
+                ->exists();
+
+            if ($tugasAktif) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pesanan ini sudah memiliki tugas pengantaran yang masih berjalan.',
+                ], 422);
+            }
+
+            $alamatTujuan = trim((string) ($validated['alamat_tujuan'] ?? $order->alamat));
+
+            if ($alamatTujuan === '') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Alamat pelanggan belum tersedia. Lengkapi alamat pesanan terlebih dahulu.',
+                ], 422);
+            }
+
+            $task = $order->antarJemput()->create([
+                'id_kurir' => null,
+                'jenis_antar_jemput' => 'pengantaran',
+                'status_antar_jemput' => 'menunggu',
+                'alamat_tujuan' => $alamatTujuan,
+                'nama_penerima' => $validated['nama_penerima'] ?? $order->nama_pelanggan,
+                'no_hp_penerima' => $validated['no_hp_penerima'] ?? $order->no_hp,
+                'jadwal' => $validated['jadwal'] ?? null,
+                'catatan' => $validated['catatan'] ?? null,
+            ]);
+
+            $task->riwayatAntarJemput()->create([
+                'id_user' => Auth::id(),
+                'status_sebelumnya' => null,
+                'status_selanjutnya' => 'menunggu',
+                'keterangan' => 'Tugas pengantaran dibuat dari pesanan siap diambil.',
+                'tanggal_perubahan' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tugas pengantaran dibuat. Menunggu kurir menerima tugas.',
+                'data' => new DeliveryTaskResource($task->load([
+                    'pesanan',
+                    'kurir',
+                    'riwayatAntarJemput' => fn ($query) => $query
+                        ->with('user')
+                        ->latest('tanggal_perubahan'),
+                ])),
+            ], 201);
+        });
     }
 
     public function store(StoreOrderRequest $request)

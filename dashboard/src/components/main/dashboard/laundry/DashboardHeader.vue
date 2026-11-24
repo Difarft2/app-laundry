@@ -56,14 +56,6 @@ const today = computed(() => formatDateLong(new Date()))
         <CalendarIcon class="size-4" />
         <span class="capitalize">{{ today }}</span>
         <span aria-hidden="true">·</span>
-        <span>Data demo, belum terhubung ke API.</span>
-      </p>
-    </div>
-
-    <div class="shrink-0">
-      <p class="text-xs font-medium text-gray-400 dark:text-gray-500">Dashboard {{ roleMeta[role].label }}</p>
-      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Tampilan mengikuti role akun yang sedang login.
       </p>
     </div>
   </section>

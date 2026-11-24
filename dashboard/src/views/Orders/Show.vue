@@ -5,6 +5,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import PaymentHistoryList from '@/components/main/payments/PaymentHistoryList.vue'
 import RecordPaymentDialog from '@/components/main/payments/RecordPaymentDialog.vue'
+import CreateDeliveryDialog from '@/components/main/orders/CreateDeliveryDialog.vue'
 import DeleteOrderDialog from '@/components/main/orders/DeleteOrderDialog.vue'
 import UpdateOrderStatusDialog from '@/components/main/orders/UpdateOrderStatusDialog.vue'
 import { Badge } from '@/components/ui/badge'
@@ -16,11 +17,13 @@ import {
   PencilIcon,
   PrinterIcon,
   TrashBinIcon,
+  TruckDeliveryIcon,
 } from '@/icons/layout'
 import { orderStatusColor, orderStatusLabel } from '@/constants/orders'
 import { normalizeApiError } from '@/services/http'
 import { ordersApi } from '@/services/orders'
 import { useAuthStore } from '@/stores/auth'
+import { hasActiveDelivery } from '@/utils/order-delivery'
 import { printOrderReceipt } from '@/utils/order-receipt'
 import type { Order } from '@/types/order'
 import { formatCurrency } from '@/utils/format'
@@ -37,12 +40,23 @@ const successMessage = ref<string | null>(null)
 const statusOpen = ref(false)
 const deleteOpen = ref(false)
 const paymentOpen = ref(false)
+const deliveryOpen = ref(false)
 
 const orderId = computed(() => Number(route.params.id))
 
 const canUpdateStatus = computed(() => auth.hasPermission('orders.update-status'))
 const canDelete = computed(() => auth.hasPermission('orders.delete'))
 const canRecordPayment = computed(() => auth.hasPermission('payments.create'))
+const canAntar = computed(() => {
+  const current = order.value
+
+  return Boolean(
+    current
+    && canUpdateStatus.value
+    && current.status_pesanan === 'siap_diambil'
+    && !hasActiveDelivery(current),
+  )
+})
 
 const processStatusLabels: Record<string, string> = {
   menunggu: 'Menunggu pengerjaan',
@@ -116,6 +130,11 @@ const printOrder = async () => {
     loadError.value = normalizeApiError(error).message
   }
 }
+
+const handleDeliveryCreated = async (message: string) => {
+  successMessage.value = message
+  await load()
+}
 </script>
 
 <template>
@@ -176,6 +195,10 @@ const printOrder = async () => {
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
+              <Button v-if="canAntar" size="sm" @click="deliveryOpen = true">
+                <TruckDeliveryIcon class="size-4" />
+                Antar
+              </Button>
               <Button variant="outline" size="sm" @click="printOrder">
                 <PrinterIcon class="size-4" />
                 Cetak struk
@@ -424,6 +447,12 @@ const printOrder = async () => {
     />
 
     <DeleteOrderDialog v-model:open="deleteOpen" :order="order" @deleted="handleDeleted" />
+
+    <CreateDeliveryDialog
+      v-model:open="deliveryOpen"
+      :order="order"
+      @created="handleDeliveryCreated"
+    />
 
     <RecordPaymentDialog
       v-model:open="paymentOpen"

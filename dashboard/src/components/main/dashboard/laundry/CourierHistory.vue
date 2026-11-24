@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { Badge } from '@/components/ui/badge'
-import { courierHistory } from './data'
 import { courierTypeMeta } from './status'
+import type { CourierHistoryItem } from './types'
 
 interface CourierHistoryProps {
+  tasks: CourierHistoryItem[]
   title?: string
   subtitle?: string
 }
 
-withDefaults(defineProps<CourierHistoryProps>(), {
+const props = withDefaults(defineProps<CourierHistoryProps>(), {
   title: 'Riwayat Tugas',
   subtitle: 'Tugas antar-jemput yang telah Anda selesaikan.',
 })
@@ -23,7 +24,7 @@ withDefaults(defineProps<CourierHistoryProps>(), {
         <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ title }}</h3>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ subtitle }}</p>
       </div>
-      <Badge color="success" size="sm">{{ courierHistory.length }} selesai</Badge>
+      <Badge color="success" size="sm">{{ props.tasks.length }} selesai</Badge>
     </div>
 
     <div class="custom-scrollbar mt-4 max-w-full overflow-x-auto">
@@ -53,7 +54,7 @@ withDefaults(defineProps<CourierHistoryProps>(), {
 
         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
           <tr
-            v-for="task in courierHistory"
+            v-for="task in props.tasks"
             :key="task.id"
             class="transition-colors hover:bg-gray-50/70 dark:hover:bg-white/3"
           >
@@ -76,6 +77,11 @@ withDefaults(defineProps<CourierHistoryProps>(), {
             </td>
             <td class="py-3.5">
               <Badge size="sm" color="success">Selesai</Badge>
+            </td>
+          </tr>
+          <tr v-if="props.tasks.length === 0">
+            <td colspan="6" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+              Belum ada tugas yang diselesaikan.
             </td>
           </tr>
         </tbody>

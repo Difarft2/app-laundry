@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/select'
 import {
   ArrowRightIcon,
+  CheckIcon,
   HorizontalDotsIcon,
   InboxIcon,
   LoaderCircleIcon,
@@ -66,6 +67,7 @@ const page = ref(1)
 const canAssign = computed(() => auth.hasPermission('delivery.assign'))
 const canUpdateStatus = computed(() => auth.hasPermission('delivery.update'))
 const isCourier = computed(() => auth.hasRole('kurir'))
+const canAccept = computed(() => isCourier.value && canUpdateStatus.value)
 
 const isAssignedToMe = (task: DeliveryTask): boolean =>
   isCourier.value && task.kurir?.id === auth.user?.id
@@ -132,6 +134,19 @@ const openAssign = (task: DeliveryTask) => {
 const openStatus = (task: DeliveryTask) => {
   statusTarget.value = task
   statusOpen.value = true
+}
+
+const acceptTask = async (task: DeliveryTask) => {
+  loadError.value = null
+
+  try {
+    const updated = await deliveryApi.accept(task.id_antar_jemput)
+    await refreshWith(
+      `Tugas ${updated.pesanan?.kode_pesanan ?? ''} diterima. Status sekarang proses antar.`
+    )
+  } catch (error) {
+    loadError.value = normalizeApiError(error).message
+  }
 }
 
 const refreshWith = async (message: string, resetFilters = false) => {
@@ -428,6 +443,14 @@ onBeforeUnmount(() => {
                           >
                             <PencilIcon class="size-5" />
                             {{ task.kurir ? 'Ganti kurir' : 'Tugaskan kurir' }}
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            v-if="canAccept && task.status_antar_jemput === 'menunggu' && !task.kurir"
+                            @select="acceptTask(task)"
+                          >
+                            <CheckIcon class="size-5" />
+                            Terima tugas
                           </DropdownMenuItem>
 
                           <DropdownMenuItem

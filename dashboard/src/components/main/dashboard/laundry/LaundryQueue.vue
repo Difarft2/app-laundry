@@ -1,11 +1,22 @@
 <script setup lang="ts">
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { AlertIcon, ClockIcon } from '@/icons/layout'
 import { cn } from '@/utils/cn'
-import { queueItems, queueNotes, queueSummary } from './data'
 import { activityDotClasses, laundryStatusMeta } from './status'
-import type { LaundryStatus } from './types'
+import type { LaundryStatus, QueueItem, QueueSummaryItem } from './types'
+
+interface LaundryQueueProps {
+  summary: QueueSummaryItem[]
+  items: QueueItem[]
+  notes: string[]
+  loading?: boolean
+  error?: string | null
+}
+
+const props = withDefaults(defineProps<LaundryQueueProps>(), {
+  loading: false,
+  error: null,
+})
 
 const steps = ['Dicuci', 'Dikeringkan', 'Finishing', 'Selesai'] as const
 
@@ -38,17 +49,14 @@ const stepIndex = (status: LaundryStatus): number => {
       <div class="flex items-center gap-2">
         <span class="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
           <ClockIcon class="size-4" />
-          Diperbarui 09.45
+          Diperbarui otomatis
         </span>
-        <Button variant="outline" size="sm" disabled title="Halaman proses laundry belum tersedia">
-          Lihat antrean
-        </Button>
       </div>
     </div>
 
     <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
       <div
-        v-for="item in queueSummary"
+        v-for="item in props.summary"
         :key="item.label"
         class="rounded-xl border border-gray-100 px-3 py-2.5 dark:border-gray-800"
       >
@@ -61,7 +69,7 @@ const stepIndex = (status: LaundryStatus): number => {
     </div>
 
     <div class="mt-4 divide-y divide-gray-100 dark:divide-gray-800">
-      <div v-for="item in queueItems" :key="item.id" class="py-4 first:pt-1">
+      <div v-for="item in props.items" :key="item.id" class="py-4 first:pt-1">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2">
@@ -71,7 +79,6 @@ const stepIndex = (status: LaundryStatus): number => {
               <Badge size="sm" :color="laundryStatusMeta[item.status].color">
                 {{ laundryStatusMeta[item.status].label }}
               </Badge>
-              <Badge v-if="item.isExpress" size="sm" color="warning">Express 4 Jam</Badge>
             </div>
 
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
@@ -115,6 +122,12 @@ const stepIndex = (status: LaundryStatus): number => {
           </div>
         </div>
       </div>
+      <p
+        v-if="props.items.length === 0"
+        class="py-10 text-center text-sm text-gray-500 dark:text-gray-400"
+      >
+        {{ props.error ?? (props.loading ? 'Memuat antrean…' : 'Tidak ada antrean laundry aktif.') }}
+      </p>
     </div>
 
     <div
@@ -128,7 +141,7 @@ const stepIndex = (status: LaundryStatus): number => {
       </p>
       <ul class="mt-2 space-y-1.5">
         <li
-          v-for="note in queueNotes"
+          v-for="note in props.notes"
           :key="note"
           class="flex gap-2 text-xs leading-5 text-warning-700/90 dark:text-warning-200/80"
         >

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\ServiceController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Api\V1\PaymentMethodController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\DeliveryTaskController;
+use App\Http\Controllers\Api\V1\PengeluaranController;
 
 Route::prefix('v1')->group(function () {
 
@@ -20,6 +22,10 @@ Route::prefix('v1')->group(function () {
 
     // Authenticated routes
     Route::middleware('auth:sanctum')->group(function () {
+
+        // Role-aware dashboard data
+        Route::get('/dashboard', [DashboardController::class, 'index'])
+            ->middleware('permission:dashboard.view');
 
         // Authentication
         Route::prefix('auth')->group(function () {
@@ -122,6 +128,21 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:payments.create');
         });
 
+        // Expense Management
+        Route::prefix('expenses')->group(function () {
+            Route::get('/', [PengeluaranController::class, 'index'])
+                ->middleware('permission:finance.view');
+
+            Route::post('/', [PengeluaranController::class, 'store'])
+                ->middleware('permission:finance.manage');
+
+            Route::put('/{pengeluaran}', [PengeluaranController::class, 'update'])
+                ->middleware('permission:finance.manage');
+
+            Route::delete('/{pengeluaran}', [PengeluaranController::class, 'destroy'])
+                ->middleware('permission:finance.manage');
+        });
+
         // Order Management
         Route::prefix('orders')->group(function () {
 
@@ -139,6 +160,9 @@ Route::prefix('v1')->group(function () {
 
             Route::get('/{order}/receipt', [OrderController::class, 'receipt'])
                 ->middleware('permission:orders.view');
+
+            Route::post('/{order}/delivery', [OrderController::class, 'createDelivery'])
+                ->middleware('permission:orders.update-status');
 
             Route::put('/{order}', [OrderController::class, 'update'])
                 ->middleware('permission:orders.update');
@@ -166,6 +190,9 @@ Route::prefix('v1')->group(function () {
 
             Route::patch('/{deliveryTask}/assign', [DeliveryTaskController::class, 'assign'])
                 ->middleware('permission:delivery.assign');
+
+            Route::patch('/{deliveryTask}/accept', [DeliveryTaskController::class, 'accept'])
+                ->middleware('permission:delivery.update');
 
             Route::patch('/{deliveryTask}/status', [DeliveryTaskController::class, 'updateStatus'])
                 ->middleware('permission:delivery.update');

@@ -4,9 +4,19 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ArrowRightIcon, InboxIcon, SearchIcon } from '@/icons/layout'
 import { formatCurrency } from '@/utils/format'
-import { recentOrders } from './data'
 import { laundryStatusMeta, paymentStatusMeta } from './status'
-import type { LaundryStatus } from './types'
+import type { LaundryStatus, OrderItem } from './types'
+
+interface RecentOrdersProps {
+  orders: OrderItem[]
+  loading?: boolean
+  error?: string | null
+}
+
+const props = withDefaults(defineProps<RecentOrdersProps>(), {
+  loading: false,
+  error: null,
+})
 
 const search = ref('')
 const statusFilter = ref<'all' | LaundryStatus>('all')
@@ -14,7 +24,7 @@ const statusFilter = ref<'all' | LaundryStatus>('all')
 const filteredOrders = computed(() => {
   const keyword = search.value.trim().toLowerCase()
 
-  return recentOrders.filter((order) => {
+  return props.orders.filter((order) => {
     const matchKeyword =
       !keyword ||
       order.invoice.toLowerCase().includes(keyword) ||
@@ -112,7 +122,6 @@ const filteredOrders = computed(() => {
               <p class="text-sm font-medium text-gray-800 dark:text-white/90">
                 {{ order.invoice }}
               </p>
-              <p class="mt-0.5 text-xs text-gray-400 dark:text-gray-500">1 layanan</p>
             </td>
             <td class="py-3.5 pe-4">
               <p class="text-sm text-gray-700 dark:text-gray-300">{{ order.customer }}</p>
@@ -144,15 +153,13 @@ const filteredOrders = computed(() => {
               </Badge>
             </td>
             <td class="py-3.5 text-end">
-              <button
-                type="button"
-                disabled
-                title="Detail pesanan belum tersedia"
-                class="inline-flex size-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/5 dark:hover:text-white"
+              <RouterLink
+                :to="`/orders/${order.id}`"
+                class="inline-flex size-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-white"
                 aria-label="Lihat detail pesanan"
               >
                 <ArrowRightIcon class="size-4" />
-              </button>
+              </RouterLink>
             </td>
           </tr>
 
@@ -181,9 +188,11 @@ const filteredOrders = computed(() => {
       class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3 dark:border-gray-800"
     >
       <p class="text-xs text-gray-500 dark:text-gray-400">
-        Menampilkan {{ filteredOrders.length }} dari {{ recentOrders.length }} pesanan terbaru
+        Menampilkan {{ filteredOrders.length }} dari {{ props.orders.length }} pesanan terbaru
       </p>
-      <p class="text-xs text-gray-400 dark:text-gray-500">Data demo</p>
+      <p v-if="error" class="text-xs text-error-500">{{ error }}</p>
+      <p v-else-if="loading" class="text-xs text-gray-400 dark:text-gray-500">Memuat data…</p>
+      <p v-else class="text-xs text-gray-400 dark:text-gray-500">Data langsung dari API</p>
     </div>
   </div>
 </template>

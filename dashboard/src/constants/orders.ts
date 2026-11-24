@@ -15,7 +15,6 @@ export const ORDER_STATUS_OPTIONS: OrderStatusOption[] = [
   { value: 'disetrika', label: 'Di setrika', color: 'warning' },
   { value: 'diproses', label: 'Diproses', color: 'info' },
   { value: 'siap_diambil', label: 'Siap diambil', color: 'warning' },
-  { value: 'dalam_pengantaran', label: 'Dalam pengantaran', color: 'info' },
   { value: 'selesai', label: 'Selesai', color: 'success' },
   { value: 'dibatalkan', label: 'Dibatalkan', color: 'error' },
 ]

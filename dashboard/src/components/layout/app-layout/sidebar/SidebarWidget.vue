@@ -1,3 +1,24 @@
+<script setup lang="ts">
+import { computed, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useDashboardStore } from '@/stores/dashboard'
+
+const dashboard = useDashboardStore()
+const auth = useAuthStore()
+const isCourier = computed(() => auth.role === 'kurir')
+
+onMounted(() => {
+  void dashboard.load()
+})
+
+const queue = computed(() => dashboard.data?.data.metrics.queueWashing ?? 0)
+const couriers = computed(() =>
+  isCourier.value
+    ? (dashboard.data?.data.metrics.waitingCourier ?? 0)
+    : (dashboard.data?.data.metrics.activeCouriers ?? 0),
+)
+</script>
+
 <template>
   <div class="mb-4">
     <div
@@ -20,12 +41,14 @@
 
       <div class="mt-3 grid grid-cols-2 gap-2 border-t border-gray-200 pt-3 dark:border-gray-800">
         <div>
-          <p class="text-[10px] text-gray-400 dark:text-gray-500">Antrean</p>
-          <p class="mt-0.5 text-sm font-semibold text-gray-800 dark:text-white/90">32</p>
+          <p class="text-[10px] text-gray-400 dark:text-gray-500">Antrean cuci</p>
+          <p class="mt-0.5 text-sm font-semibold text-gray-800 dark:text-white/90">{{ queue }}</p>
         </div>
         <div>
-          <p class="text-[10px] text-gray-400 dark:text-gray-500">Kurir aktif</p>
-          <p class="mt-0.5 text-sm font-semibold text-gray-800 dark:text-white/90">3</p>
+          <p class="text-[10px] text-gray-400 dark:text-gray-500">
+            {{ isCourier ? 'Tugas menunggu' : 'Kurir aktif' }}
+          </p>
+          <p class="mt-0.5 text-sm font-semibold text-gray-800 dark:text-white/90">{{ couriers }}</p>
         </div>
       </div>
     </div>
