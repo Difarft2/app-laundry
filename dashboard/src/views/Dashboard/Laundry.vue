@@ -12,6 +12,7 @@ import ExpenseBreakdown from '@/components/main/dashboard/laundry/ExpenseBreakdo
 import LandingDeliveryRequests from '@/components/main/dashboard/laundry/LandingDeliveryRequests.vue'
 import LaundryQueue from '@/components/main/dashboard/laundry/LaundryQueue.vue'
 import MetricsGrid from '@/components/main/dashboard/laundry/MetricsGrid.vue'
+import OwnerInsights from '@/components/main/dashboard/laundry/OwnerInsights.vue'
 import PaymentBreakdown from '@/components/main/dashboard/laundry/PaymentBreakdown.vue'
 import PickupRequests from '@/components/main/dashboard/laundry/PickupRequests.vue'
 import RecentOrders from '@/components/main/dashboard/laundry/RecentOrders.vue'
@@ -116,6 +117,7 @@ const landingRequests = computed(() =>
 )
 const expenses = computed(() => mapExpenses(payload.value?.charts.expenses ?? []))
 const expenseTotal = computed(() => metricsApi.value.expenses)
+const ownerInsights = computed(() => payload.value?.owner ?? null)
 
 const activityTitle = computed(() => {
   if (isKaryawan.value) return 'Aktivitas Proses Laundry'
@@ -220,6 +222,14 @@ const reviewLandingRequest = async (id: number, action: 'verify' | 'reject'): Pr
       </div>
 
       <MetricsGrid :metrics="metrics" />
+
+      <!-- Analitik eksekutif: owner penuh, admin mendapat layanan terlaris & piutang. -->
+      <OwnerInsights
+        v-if="(isOwner || isAdmin) && ownerInsights"
+        :owner="ownerInsights"
+        :loading="dashboard.loading"
+        :error="dashboard.error"
+      />
 
       <!-- Owner: fokus pendapatan, pengeluaran, dan histori seluruh aktivitas. -->
       <template v-if="isOwner">

@@ -125,6 +125,49 @@ export interface DashboardTaskApi {
   } | null
 }
 
+export interface DashboardOwnerNetIncomeApi {
+  revenue: number
+  expenses: number
+  net_income: number
+  previous_net_income: number
+  growth: number
+}
+
+export interface DashboardOwnerTopServiceApi {
+  label: string
+  total: number
+  revenue: number
+}
+
+export interface DashboardOwnerRetentionApi {
+  total_customers: number
+  new_customers: number
+  returning_customers: number
+  retention_rate: number
+}
+
+export interface DashboardOwnerUnpaidItemApi {
+  kode_pesanan: string
+  nama_pelanggan: string
+  no_hp: string
+  total_tagihan: number
+  sudah_dibayar: number
+  sisa_tagihan: number
+  tanggal_masuk: string | null
+}
+
+/** Blok analitik eksekutif: hanya terisi untuk owner (sebagian untuk admin). */
+export interface DashboardOwnerApi {
+  net_income: DashboardOwnerNetIncomeApi | null
+  top_services: DashboardOwnerTopServiceApi[]
+  retention: DashboardOwnerRetentionApi | null
+  unpaid: {
+    total_unpaid: number
+    count: number
+    list: DashboardOwnerUnpaidItemApi[]
+  } | null
+}
+
 export interface DashboardApi {
   success: boolean
   data: {
@@ -148,6 +191,7 @@ export interface DashboardApi {
     laundry: {
       queue: DashboardQueueApi[]
     }
+    owner: DashboardOwnerApi | null
     delivery: {
       active_tasks: DashboardTaskApi[]
       history: DashboardTaskApi[]
