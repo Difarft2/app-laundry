@@ -1,7 +1,9 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -48,10 +50,8 @@ return new class extends Migration
      */
     private function setStatuses(array $statuses): void
     {
-        $values = collect($statuses)->map(fn (string $status) => "'{$status}'")->implode(', ');
-
-        DB::statement(
-            "ALTER TABLE antar_jemput MODIFY status_antar_jemput ENUM({$values}) NOT NULL DEFAULT 'menunggu'"
-        );
+        Schema::table('antar_jemput', function (Blueprint $table) use ($statuses) {
+            $table->enum('status_antar_jemput', $statuses)->default('menunggu')->change();
+        });
     }
 };
