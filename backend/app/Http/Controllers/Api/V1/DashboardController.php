@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\DeliveryTaskResource;
 use App\Http\Resources\Api\V1\OrderResource;
 use App\Models\AntarJemput;
+use App\Models\DetailPesanan;
 use App\Models\MetodePembayaran;
 use App\Models\Pembayaran;
 use App\Models\Pengeluaran;
@@ -38,6 +39,7 @@ class DashboardController extends Controller
         $user = $request->user();
         $role = $this->roleOf($user);
         $isCourier = $role === 'kurir';
+        $isOwner = $role === 'owner';
 
         $ordersQuery = $isCourier
             ? Pesanan::query()->whereRaw('1 = 0')
@@ -123,6 +125,13 @@ class DashboardController extends Controller
                 'laundry' => [
                     'queue' => $isCourier ? [] : $this->laundryQueue($ordersQuery),
                 ],
+                // Blok eksekutif: laba bersih & retensi khusus owner; layanan terlaris & piutang juga untuk admin (PRD 3 & 5.2).
+                'owner' => in_array($role, ['owner', 'admin']) ? [
+                    'net_income' => $isOwner ? $this->netIncome() : null,
+                    'top_services' => $this->topServices(),
+                    'retention' => $isOwner ? $this->customerRetention() : null,
+                    'unpaid' => $this->unpaidTracking(),
+                ] : null,
                 'delivery' => [
                     'active_tasks' => DeliveryTaskResource::collection($activeTasks)->resolve($request),
                     'history' => DeliveryTaskResource::collection($completedTasks)->resolve($request),
@@ -401,10 +410,118 @@ class DashboardController extends Controller
             ->all();
     }
 
+    private function topServices(): array
+    {
+        return DetailPesanan::query()
+            ->whereHas('pesanan', fn ($query) => $query->where('status_pesanan', '!=', 'dibatalkan'))
+            ->selectRaw('nama_layanan, COUNT(*) as total, SUM(subtotal) as revenue')
+            ->groupBy('nama_layanan')
+            ->orderByDesc('revenue')
+            ->limit(5)
+            ->get()
+            ->map(fn ($row) => [
+                'label' => $row->nama_layanan,
+                'total' => (int) $row->total,
+                'revenue' => round((float) $row->revenue, 2),
+            ])
+            ->all();
+    }
+
+    private function customerRetention(): array
+    {
+        // Tidak ada tabel pelanggan; identitas pelanggan memakai no_hp.
+        $groups = Pesanan::query()
+            ->where('status_pesanan', '!=', 'dibatalkan')
+            ->whereNotNull('no_hp')
+            ->selectRaw('no_hp, COUNT(*) as total')
+            ->groupBy('no_hp')
+            ->pluck('total', 'no_hp');
+
+        $totalCustomers = $groups->count();
+        $returning = $groups->filter(fn ($total) => $total > 1)->count();
+
+        return [
+            'total_customers' => $totalCustomers,
+            'new_customers' => $totalCustomers - $returning,
+            'returning_customers' => $returning,
+            'retention_rate' => $totalCustomers > 0
+                ? round(($returning / $totalCustomers) * 100, 2)
+                : 0,
+        ];
+    }
+
+    private function unpaidTracking(): array
+    {
+        $paid = Pembayaran::query()
+            ->where('status_pembayaran', 'berhasil')
+            ->selectRaw('id_pesanan, SUM(jumlah_bayar) as total')
+            ->groupBy('id_pesanan')
+            ->pluck('total', 'id_pesanan');
+
+        $orders = Pesanan::query()
+            ->where('status_pesanan', '!=', 'dibatalkan')
+            ->latest('tanggal_masuk')
+            ->get();
+
+        $unpaid = $orders
+            ->map(function (Pesanan $order) use ($paid) {
+                $dibayar = (float) ($paid[$order->id_pesanan] ?? 0);
+                $sisa = (float) $order->total_harga - $dibayar;
+
+                return [
+                    'kode_pesanan' => $order->kode_pesanan,
+                    'nama_pelanggan' => $order->nama_pelanggan,
+                    'no_hp' => $order->no_hp,
+                    'total_tagihan' => round((float) $order->total_harga, 2),
+                    'sudah_dibayar' => round($dibayar, 2),
+                    'sisa_tagihan' => round($sisa, 2),
+                    'tanggal_masuk' => $order->tanggal_masuk?->toDateString(),
+                ];
+            })
+            ->filter(fn ($row) => $row['sisa_tagihan'] > 0)
+            ->values();
+
+        return [
+            'total_unpaid' => round((float) $unpaid->sum('sisa_tagihan'), 2),
+            'count' => $unpaid->count(),
+            'list' => $unpaid->take(10)->all(),
+        ];
+    }
+
+    private function netIncome(): array
+    {
+        $month = today()->startOfMonth();
+        $prev = $month->copy()->subMonth();
+
+        $revenue = fn ($start) => (float) Pembayaran::where('status_pembayaran', 'berhasil')
+            ->whereBetween('tanggal_pembayaran', [$start->copy()->startOfMonth(), $start->copy()->endOfMonth()])
+            ->sum('jumlah_bayar');
+
+        $expense = fn ($start) => (float) Pengeluaran::whereBetween('tanggal', [$start->copy()->startOfMonth(), $start->copy()->endOfMonth()])
+            ->sum('jumlah');
+
+        $currentRevenue = $revenue($month);
+        $currentExpense = $expense($month);
+        $currentNet = $currentRevenue - $currentExpense;
+
+        $prevNet = $revenue($prev) - $expense($prev);
+
+        $growth = $prevNet != 0
+            ? round((($currentNet - $prevNet) / abs($prevNet)) * 100, 2)
+            : ($currentNet > 0 ? 100 : 0);
+
+        return [
+            'revenue' => round($currentRevenue, 2),
+            'expenses' => round($currentExpense, 2),
+            'net_income' => round($currentNet, 2),
+            'previous_net_income' => round($prevNet, 2),
+            'growth' => $growth,
+        ];
+    }
+
     private function recentActivities(Request $request, bool $isCourier): array
     {
         $activities = collect();
-
         if (!$isCourier) {
             $activities = $activities->concat(
                 RiwayatStatusPesanan::with(['user.roles', 'pesanan'])
