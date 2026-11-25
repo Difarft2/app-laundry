@@ -58,6 +58,10 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        if ($isCourier) {
+            $recentTasks = $recentTasks->filter(fn($task) => $task->id_kurir === $user->id);
+        }
+
         $activeTasks = (clone $tasksQuery)
             ->with(['pesanan', 'kurir'])
             ->whereIn('status_antar_jemput', self::PENDING_DELIVERY_STATUSES)
@@ -167,7 +171,12 @@ class DashboardController extends Controller
 
     private function operationalMetrics($ordersQuery, $tasksQuery): array
     {
+        $role = $this->roleOf(auth()->user());
         $today = today();
+
+        // Metrik ini hanya dipanggil untuk owner, admin, dan karyawan.
+        // Informasi finansial hanya dibuka untuk owner/admin.
+        $isOwnerOrAdmin = in_array($role, ['owner', 'admin']);
 
         $totalOrders = (clone $ordersQuery)->count();
         $completedOrders = (clone $ordersQuery)
@@ -180,11 +189,20 @@ class DashboardController extends Controller
             ->whereDate('tanggal_selesai', $today)
             ->count();
 
-        $tagihan = (float) (clone $ordersQuery)
-            ->where('status_pesanan', '!=', 'dibatalkan')
-            ->sum('total_harga');
-        $pembayaranBerhasil = (float) Pembayaran::where('status_pembayaran', 'berhasil')->sum('jumlah_bayar');
-        $unpaid = max(0, $tagihan - $pembayaranBerhasil);
+        $revenue = 0;
+        $expenses = 0;
+        $unpaid = 0;
+
+        if ($isOwnerOrAdmin) {
+            $tagihan = (float) (clone $ordersQuery)
+                ->where('status_pesanan', '!=', 'dibatalkan')
+                ->sum('total_harga');
+            $revenue = (float) Pembayaran::where('status_pembayaran', 'berhasil')->sum('jumlah_bayar');
+            $unpaid = max(0, $tagihan - $revenue);
+            $expenses = (float) Pengeluaran::whereMonth('tanggal', $today->month)
+                ->whereYear('tanggal', $today->year)
+                ->sum('jumlah');
+        }
 
         $queueWashing = (int) ProsesLaundry::where('status_proses', 'menunggu')->count();
         $washingInProgress = (int) ProsesLaundry::where('status_proses', 'pencucian')->count();
@@ -213,10 +231,8 @@ class DashboardController extends Controller
         return [
             'totalOrders' => (int) $totalOrders,
             'completedOrders' => (int) $completedOrders,
-            'revenue' => round($pembayaranBerhasil, 2),
-            'expenses' => round((float) Pengeluaran::whereMonth('tanggal', $today->month)
-                ->whereYear('tanggal', $today->year)
-                ->sum('jumlah'), 2),
+            'revenue' => round($revenue, 2),
+            'expenses' => round($expenses, 2),
             'activeEmployees' => $activeEmployees,
             'activeCouriers' => $activeCouriers,
             'pendingPickups' => $pendingPickups,
