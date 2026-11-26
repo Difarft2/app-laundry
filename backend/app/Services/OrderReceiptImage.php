@@ -2,19 +2,15 @@
 
 namespace App\Services;
 
+use App\Models\AppSetting;
 use App\Models\Pesanan;
 
 /**
- * Membuat gambar struk pesanan (PNG) berisi identitas singkat dan QR.
- *
- * Sengaja tidak menampilkan rincian layanan atau total: struk ini dipakai
- * untuk mengidentifikasi pesanan dan memperbarui statusnya lewat QR.
+ * Membuat gambar struk pesanan (PNG) berisi identitas, layanan, dan QR.
  */
 class OrderReceiptImage
 {
     private const WIDTH = 440;
-
-    private const HEIGHT = 600;
 
     private const PADDING = 34;
 
@@ -24,7 +20,15 @@ class OrderReceiptImage
 
     public function generate(Pesanan $order): string
     {
-        $image = imagecreatetruecolor(self::WIDTH, self::HEIGHT);
+        $order->loadMissing('detailPesanan');
+        $setting = AppSetting::first() ?? new AppSetting(AppSetting::DEFAULTS);
+        $items = $order->detailPesanan
+            ->map(fn ($detail) => $detail->nama_layanan.' · '.(float) $detail->jumlah.' '.strtolower((string) $detail->satuan))
+            ->filter()
+            ->values();
+
+        $height = 620 + ($items->count() * 28);
+        $image = imagecreatetruecolor(self::WIDTH, $height);
 
         $white = imagecolorallocate($image, 255, 255, 255);
         $black = imagecolorallocate($image, 17, 24, 39);
@@ -32,7 +36,7 @@ class OrderReceiptImage
 
         imagefill($image, 0, 0, $white);
 
-        $this->centeredText($image, 'PEMUDA LAUNDRY', 22, 52, $black, true);
+        $this->centeredText($image, strtoupper((string) $setting->nama_app), 22, 52, $black, true);
         $this->dashedLine($image, 82, $muted);
 
         $rows = [
@@ -50,7 +54,18 @@ class OrderReceiptImage
             $y += 62;
         }
 
-        $this->dashedLine($image, 372, $muted);
+        $this->dashedLine($image, $y, $muted);
+        $y += 30;
+        $this->text($image, 'LAYANAN', 12, self::PADDING, $y, $muted);
+        $y += 28;
+
+        foreach ($items as $item) {
+            $this->text($image, (string) $item, 16, self::PADDING, $y, $black, true);
+            $y += 28;
+        }
+
+        $y += 8;
+        $this->dashedLine($image, $y, $muted);
 
         $qrSize = 190;
         $qr = imagecreatefromstring($this->qrCode->png($order->kode_pesanan, $qrSize));
@@ -60,7 +75,7 @@ class OrderReceiptImage
                 $image,
                 $qr,
                 intdiv(self::WIDTH - $qrSize, 2),
-                396,
+                $y + 24,
                 0,
                 0,
                 imagesx($qr),

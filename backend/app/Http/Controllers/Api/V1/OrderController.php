@@ -11,6 +11,7 @@ use App\Models\Layanan;
 use App\Models\MetodePembayaran;
 use App\Models\Pesanan;
 use App\Services\OrderReceiptImage;
+use App\Services\WahaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -387,6 +388,9 @@ class OrderController extends Controller
             'pembayaran.user',
             'riwayatStatus.user',
         ]);
+
+        // Kirim notifikasi WhatsApp via Waha (sudah setelah detailPesanan di-load)
+        app(WahaService::class)->sendOrderInvoice($order);
 
         return response()->json([
             'success' => true,
