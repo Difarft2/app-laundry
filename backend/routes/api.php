@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\DeliveryTaskController;
 use App\Http\Controllers\Api\V1\PengeluaranController;
 use App\Http\Controllers\Api\V1\LandingDeliveryController;
 use App\Http\Controllers\Api\V1\SettingController;
+use App\Http\Controllers\Api\V1\LandingTrackController;
 
 Route::prefix('v1')->group(function () {
 
@@ -25,6 +26,9 @@ Route::prefix('v1')->group(function () {
     // Landing page tidak punya login; akses dilindungi kunci rahasia bersama.
     Route::post('/landing/delivery-requests', [LandingDeliveryController::class, 'store'])
         ->middleware(['landing.key', 'throttle:10,1']);
+
+    Route::get('/landing/track/{kode_pesanan}', [LandingTrackController::class, 'show'])
+        ->middleware(['landing.key', 'throttle:30,1']);
 
     // Branding aplikasi bersifat publik agar bisa dipakai halaman masuk.
     Route::get('/settings', [SettingController::class, 'show']);

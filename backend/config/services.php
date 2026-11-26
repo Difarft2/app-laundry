@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'waha' => [
+        'base_url' => rtrim((string) env('WAHA_BASE_URL', ''), '/'),
+        'api_key' => env('WAHA_API_KEY'),
+        'session' => env('WAHA_SESSION', 'default'),
+        'landing_url' => rtrim((string) env('LANDING_URL', ''), '/'),
+    ],
 ];
