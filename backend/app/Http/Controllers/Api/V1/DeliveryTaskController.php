@@ -20,11 +20,13 @@ class DeliveryTaskController extends Controller
     private const TRANSITIONS = [
         'menunggu_verifikasi' => ['menunggu', 'gagal'],
         'menunggu' => ['ditugaskan', 'gagal'],
-        'ditugaskan' => ['menuju_lokasi', 'selesai', 'gagal'],
-        'menuju_lokasi' => ['menuju_laundry', 'barang_diambil', 'selesai', 'gagal'],
+        // Pickup and delivery use different transition maps; these are the
+        // shared edges only. Type-specific validation below closes invalid paths.
+        'ditugaskan' => ['menuju_lokasi', 'gagal'],
+        'menuju_lokasi' => ['barang_diambil', 'barang_diantar', 'gagal'],
+        'barang_diambil' => ['menuju_laundry', 'gagal'],
         'menuju_laundry' => ['pakaian_sampai_laundry', 'gagal'],
         'pakaian_sampai_laundry' => ['selesai', 'gagal'],
-        'barang_diambil' => ['selesai', 'gagal'],
         'barang_diantar' => ['selesai', 'gagal'],
         'selesai' => [],
         'gagal' => [],
@@ -382,21 +384,19 @@ class DeliveryTaskController extends Controller
         $isLandingPickup = $deliveryTask->sumber === 'landing'
             && $deliveryTask->jenis_antar_jemput === 'penjemputan';
 
-        // Penjemputan dari landing langsung berjalan menuju lokasi setelah
-        // kurir ditugaskan. Tugas internal tetap menunggu konfirmasi kurir.
         if ($newCourier === null) {
             $statusBaru = 'menunggu';
-        } elseif ($isLandingPickup) {
-            $statusBaru = 'menuju_lokasi';
+        } elseif ($statusLama === 'menunggu') {
+            // Assignment/acceptance records the business state DITERIMA_KURIR.
+            // The courier alone starts the trip with menuju_lokasi.
+            $statusBaru = 'ditugaskan';
         } else {
-            $statusBaru = $statusLama !== 'menunggu' ? 'ditugaskan' : 'menunggu';
+            $statusBaru = 'ditugaskan';
         }
 
         $kurir = $newCourier !== null ? User::find($newCourier) : null;
         $keterangan = $kurir
-            ? $isLandingPickup
-                ? "Kurir ditugaskan: {$kurir->name}. Menuju lokasi penjemputan."
-                : "Kurir ditugaskan: {$kurir->name}. Menunggu konfirmasi kurir."
+            ? "Kurir ditugaskan: {$kurir->name}. Tugas diterima kurir."
             : 'Penugasan kurir dibatalkan.';
 
         DB::transaction(function () use (
@@ -458,24 +458,29 @@ class DeliveryTaskController extends Controller
             ], 422);
         }
 
-        if (
-            in_array($statusBaru, ['barang_diambil', 'menuju_laundry', 'pakaian_sampai_laundry'], true)
-            && $deliveryTask->jenis_antar_jemput !== 'penjemputan'
-        ) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Status ini hanya untuk tugas penjemputan.',
-            ], 422);
-        }
+        if ($deliveryTask->jenis_antar_jemput === 'penjemputan') {
+            $pickupStatuses = ['barang_diambil', 'menuju_laundry', 'pakaian_sampai_laundry'];
 
-        if (
-            $statusBaru === 'barang_diantar'
-            && $deliveryTask->jenis_antar_jemput !== 'pengantaran'
-        ) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Status barang diantar hanya untuk tugas pengantaran.',
-            ], 422);
+            if ($statusBaru === 'barang_diantar') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Status barang diantar hanya untuk tugas pengantaran.',
+                ], 422);
+            }
+
+            if ($statusBaru === 'selesai' && $statusLama !== 'pakaian_sampai_laundry') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tugas penjemputan baru selesai setelah barang diserahkan ke laundry.',
+                ], 422);
+            }
+        } elseif ($deliveryTask->jenis_antar_jemput === 'pengantaran') {
+            if (in_array($statusBaru, ['barang_diambil', 'menuju_laundry', 'pakaian_sampai_laundry'], true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Status ini hanya untuk tugas penjemputan.',
+                ], 422);
+            }
         }
 
         $orderSelesai = false;

@@ -52,7 +52,7 @@ const isPanelOpen = computed(() => props.showContent && props.isOpen)
           v-if="nav.new && showContent"
           :class="
             cn(
-              'menu-dropdown-badge absolute end-10 ms-auto',
+              'menu-dropdown-badge absolute inset-e-10 ms-auto',
               isItemActive ? 'menu-dropdown-badge-active' : 'menu-dropdown-badge-inactive',
             )
           "

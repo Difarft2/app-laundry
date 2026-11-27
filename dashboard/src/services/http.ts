@@ -75,7 +75,7 @@ export const normalizeApiError = (error: unknown): ApiError => {
     if (!error.response) {
       return {
         message:
-          'Tidak dapat terhubung ke server API. Pastikan backend berjalan di http://127.0.0.1:8000.',
+          `Tidak dapat terhubung ke server API. Pastikan backend berjalan di ${rawBaseUrl.replace(/\/+$/, '')}`,
         isNetworkError: true,
       }
     }

@@ -21,5 +21,7 @@ export interface NavItem {
   permission?: string
   /** Label alternatif untuk role yang hanya memiliki akses baca. */
   readOnlyName?: string
+  /** Item hanya ditampilkan untuk role Admin. */
+  adminOnly?: boolean
   subItems?: SubItem[]
 }

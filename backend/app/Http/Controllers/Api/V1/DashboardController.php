@@ -53,9 +53,13 @@ class DashboardController extends Controller
             : $this->operationalMetrics($ordersQuery, $tasksQuery);
 
         $recentTasks = (clone $tasksQuery)
-            ->with(['pesanan', 'kurir', 'riwayatAntarJemput' => fn ($query) => $query
-                ->with('user')
-                ->latest('tanggal_perubahan')])
+            ->with([
+                'pesanan',
+                'kurir',
+                'riwayatAntarJemput' => fn($query) => $query
+                    ->with('user')
+                    ->latest('tanggal_perubahan')
+            ])
             ->latest('id_antar_jemput')
             ->limit(5)
             ->get();
@@ -341,15 +345,23 @@ class DashboardController extends Controller
 
     private function paymentMethods(): array
     {
-        return MetodePembayaran::with(['pembayaran' => fn ($query) => $query
-            ->where('status_pembayaran', 'berhasil')])
+        /** @var \Illuminate\Database\Eloquent\Collection<int, MetodePembayaran> $methods */
+        $methods = MetodePembayaran::with([
+            'pembayaran' => fn($query) => $query
+                ->where('status_pembayaran', 'berhasil'),
+        ])
             ->orderBy('nama_metode')
-            ->get()
-            ->map(fn (MetodePembayaran $method) => [
+            ->get();
+
+        return $methods
+            ->map(fn($method) => [
                 'id' => $method->id_metode_pembayaran,
                 'label' => $method->nama_metode,
                 'kode' => $method->kode,
-                'amount' => round((float) $method->pembayaran->sum('jumlah_bayar'), 2),
+                'amount' => round(
+                    (float) $method->pembayaran->sum('amount_applied'),
+                    2
+                ),
                 'transactions' => (int) $method->pembayaran->count(),
             ])
             ->values()
@@ -361,12 +373,18 @@ class DashboardController extends Controller
         return (clone $ordersQuery)
             ->with('detailPesanan')
             ->whereIn('status_pesanan', [
-                'menunggu', 'dicuci', 'dikeringkan', 'dilipat', 'disetrika', 'diproses', 'siap_diambil',
+                'menunggu',
+                'dicuci',
+                'dikeringkan',
+                'dilipat',
+                'disetrika',
+                'diproses',
+                'siap_diambil',
             ])
             ->latest('tanggal_masuk')
             ->limit(10)
             ->get()
-            ->map(fn (Pesanan $order) => [
+            ->map(fn(Pesanan $order) => [
                 'id_pesanan' => $order->id_pesanan,
                 'kode_pesanan' => $order->kode_pesanan,
                 'pelanggan' => [
@@ -398,7 +416,7 @@ class DashboardController extends Controller
         $grandTotal = (float) $items->sum('total');
 
         return $items
-            ->map(fn ($item, int $index) => [
+            ->map(fn($item, int $index) => [
                 'id' => 'expense-' . ($index + 1),
                 'label' => $item->kategori,
                 'amount' => round((float) $item->total, 2),
@@ -528,7 +546,7 @@ class DashboardController extends Controller
                     ->latest('tanggal_perubahan')
                     ->limit(5)
                     ->get()
-                    ->map(fn ($item) => [
+                    ->map(fn($item) => [
                         'id' => 'status-' . $item->id_riwayat_status_pesanan,
                         'type' => 'order',
                         'title' => 'Status pesanan ' . ($item->pesanan?->kode_pesanan ?? '-') . ' diperbarui',
@@ -544,7 +562,7 @@ class DashboardController extends Controller
                     ->latest('tanggal_perubahan')
                     ->limit(5)
                     ->get()
-                    ->map(fn ($item) => [
+                    ->map(fn($item) => [
                         'id' => 'process-' . $item->id_riwayat_proses_laundry,
                         'type' => 'process',
                         'title' => 'Proses laundry '
@@ -562,7 +580,7 @@ class DashboardController extends Controller
                     ->latest('tanggal_pembayaran')
                     ->limit(5)
                     ->get()
-                    ->map(fn ($item) => [
+                    ->map(fn($item) => [
                         'id' => 'payment-' . $item->id_pembayaran,
                         'type' => 'payment',
                         'title' => 'Pembayaran ' . ($item->pesanan?->kode_pesanan ?? '-') . ' dicatat',
@@ -580,7 +598,7 @@ class DashboardController extends Controller
             $deliveryHistory
                 ->whereHas(
                     'antarJemput',
-                    fn ($query) => $query->where('id_kurir', $request->user()->id)
+                    fn($query) => $query->where('id_kurir', $request->user()->id)
                 )
                 // Riwayat verifikasi sengaja tidak ditampilkan ke kurir.
                 ->where(function ($query) {
@@ -617,8 +635,8 @@ class DashboardController extends Controller
         );
 
         return $activities
-            ->filter(fn ($item) => $item['time'] !== null)
-            ->sortByDesc(fn ($item) => Carbon::parse($item['time'])->timestamp)
+            ->filter(fn($item) => $item['time'] !== null)
+            ->sortByDesc(fn($item) => Carbon::parse($item['time'])->timestamp)
             ->take(8)
             ->values()
             ->all();

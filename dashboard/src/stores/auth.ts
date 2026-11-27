@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { dashboardRoleFromRoles, roleLabel } from '@/constants/roles'
 import { authApi } from '@/services/auth'
 import { clearToken, getToken, setToken } from '@/services/token'
+import { http } from '@/services/http'
 import type { AuthUser, UpdatePasswordPayload, UpdateProfilePayload } from '@/types/auth'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -19,6 +20,13 @@ export const useAuthStore = defineStore('auth', () => {
   const hasPermission = (permission: string): boolean => permissions.value.includes(permission)
 
   const hasRole = (expected: string): boolean => user.value?.roles.includes(expected) ?? false
+
+  const api = {
+    get: <T = unknown>(url: string) => http.get<T>(url),
+    put: <T = unknown>(url: string, data?: unknown) => http.put<T>(url, data),
+    post: <T = unknown>(url: string, data?: unknown) => http.post<T>(url, data),
+    delete: <T = unknown>(url: string) => http.delete<T>(url),
+  }
 
   const applySession = (accessToken: string, remember: boolean, nextUser: AuthUser) => {
     setToken(accessToken, remember)
@@ -106,6 +114,7 @@ export const useAuthStore = defineStore('auth', () => {
     roleName,
     hasPermission,
     hasRole,
+    api,
     login,
     ensureLoaded,
     refreshUser,

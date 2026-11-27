@@ -16,6 +16,10 @@ export interface Payment {
   id_user: number | null
   nama_user: string | null
   jumlah_bayar: number
+  idempotency_key: string | null
+  amount_received: number
+  amount_applied: number
+  change_amount: number
   jenis_pembayaran: PaymentType
   status_pembayaran: PaymentStatus
   tanggal_pembayaran: string
@@ -45,6 +49,8 @@ export interface CreatePaymentPayload {
   id_pesanan: number
   id_metode_pembayaran: number
   jumlah_bayar: number
+  idempotency_key: string
+  amount_received: number
   jenis_pembayaran: PaymentType
   status_pembayaran?: 'berhasil' | 'menunggu'
   tanggal_pembayaran?: string | null

@@ -23,6 +23,7 @@ class StorePaymentRequest extends FormRequest
                     ->where('is_active', true),
             ],
             'jumlah_bayar' => ['required', 'numeric', 'gt:0'],
+            'idempotency_key' => ['required', 'string', 'uuid'],
             'jenis_pembayaran' => [
                 'required',
                 'string',
@@ -35,6 +36,7 @@ class StorePaymentRequest extends FormRequest
             ],
             'tanggal_pembayaran' => ['nullable', 'date'],
             'catatan' => ['nullable', 'string'],
+            'amount_received' => ['required', 'numeric', 'gte:0'],
         ];
     }
 

@@ -254,6 +254,15 @@ class OrderController extends Controller
 
     public function store(StoreOrderRequest $request)
     {
+        $user = $request->user();
+
+        if (! $user->hasPermissionTo('orders.create')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk membuat pesanan.',
+            ], 403);
+        }
+
         $validated = $request->validated();
 
         $details = $validated['detail_pesanan'];
@@ -359,7 +368,7 @@ class OrderController extends Controller
                 $order->pembayaran()->create([
                     'id_metode_pembayaran' => $validated['id_metode_pembayaran'],
                     'id_user' => Auth::id(),
-                    'kode_pembayaran' => 'PAY-' . now()->format('Ymd') . '-' . Str::upper(Str::random(6)),
+                    'kode_pembayaran' => 'PAY-' . now()->format('Ymd') . '-' . Str::upper(Str::random(10)),
                     'jumlah_bayar' => $validated['jumlah_bayar'],
                     'jenis_pembayaran' => $jenisPembayaran,
                     'status_pembayaran' => $statusPembayaran,

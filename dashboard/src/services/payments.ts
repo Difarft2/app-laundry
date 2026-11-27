@@ -30,7 +30,11 @@ export const paymentsApi = {
   },
 
   async create(payload: CreatePaymentPayload): Promise<Payment> {
-    const { data } = await http.post<PaymentResponse>('/payments', payload)
+    const dataToSend = {
+      ...payload,
+      idempotency_key: payload.idempotency_key || crypto.randomUUID(),
+    }
+    const { data } = await http.post<PaymentResponse>('/payments', dataToSend)
     return data.data
   },
 }

@@ -118,6 +118,26 @@ const router = createRouter({
       },
     },
     {
+      path: '/settings/role-permission',
+      name: 'RolePermission',
+      component: () => import('../views/Settings/RolePermission.vue'),
+      meta: {
+        title: 'Role Permission',
+        permission: 'roles.manage',
+        adminOnly: true,
+      },
+    },
+    {
+      path: '/settings/user-permission',
+      name: 'UserPermission',
+      component: () => import('../views/Settings/UserPermission.vue'),
+      meta: {
+        title: 'User Permission',
+        permission: 'roles.manage',
+        adminOnly: true,
+      },
+    },
+    {
       path: '/account',
       name: 'Account',
       component: () => import('../views/Account.vue'),
@@ -190,6 +210,10 @@ router.beforeEach(async (to) => {
 
   if (!auth.isAuthenticated) {
     return { name: 'Signin', query: { redirect: to.fullPath } }
+  }
+
+  if (to.meta.adminOnly && !auth.hasRole('admin')) {
+    return { name: 'Forbidden' }
   }
 
   if (to.meta.permission && !auth.hasPermission(to.meta.permission)) {

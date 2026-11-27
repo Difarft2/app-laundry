@@ -432,7 +432,7 @@ const handleDeliveryCreated = async (message: string) => {
           >
             <li v-for="(riwayat, index) in order.riwayat_status" :key="index" class="relative">
               <span
-                class="absolute -start-[21px] top-1.5 size-2.5 rounded-full bg-brand-500"
+                class="absolute -inset-s-5.25 top-1.5 size-2.5 rounded-full bg-brand-500"
                 aria-hidden="true"
               ></span>
               <p class="text-sm font-medium text-gray-800 dark:text-white/90">
