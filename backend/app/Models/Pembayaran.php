@@ -20,10 +20,15 @@ class Pembayaran extends Model
         'id_user',
         'kode_pembayaran',
         'jumlah_bayar',
+        'idempotency_key',
+        'payload_hash',
         'jenis_pembayaran',
         'status_pembayaran',
         'tanggal_pembayaran',
         'catatan',
+        'amount_received',
+        'amount_applied',
+        'change_amount',
     ];
 
     protected function casts(): array
@@ -31,6 +36,10 @@ class Pembayaran extends Model
         return [
             'jumlah_bayar' => 'decimal:2',
             'tanggal_pembayaran' => 'datetime',
+            'amount_received' => 'decimal:2',
+            'amount_applied' => 'decimal:2',
+            'change_amount' => 'decimal:2',
+            'idempotency_key' => 'string',
         ];
     }
 

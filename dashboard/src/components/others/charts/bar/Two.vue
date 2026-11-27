@@ -133,7 +133,7 @@ const series = [
         <span class="text-sm font-normal text-gray-700 dark:text-gray-300"> Income </span>
       </div>
       <div class="flex items-center gap-1.5">
-        <span class="size-2.5 rounded-full bg-[#7CD4FD]" />
+        <span class="size-2.5 rounded-full bg-blue-light-300" />
         <span class="text-sm font-normal text-gray-700 dark:text-gray-300"> Expense </span>
       </div>
     </div>

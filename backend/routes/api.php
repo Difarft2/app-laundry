@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\PengeluaranController;
 use App\Http\Controllers\Api\V1\LandingDeliveryController;
 use App\Http\Controllers\Api\V1\SettingController;
 use App\Http\Controllers\Api\V1\LandingTrackController;
+use App\Http\Controllers\Api\V1\RolePermissionController;
 
 Route::prefix('v1')->group(function () {
 
@@ -221,6 +222,16 @@ Route::prefix('v1')->group(function () {
 
             Route::patch('/{deliveryTask}/status', [DeliveryTaskController::class, 'updateStatus'])
                 ->middleware('permission:delivery.update');
+        });
+        // Role & Permission Management (Admin only)
+        Route::middleware('permission:roles.manage')->group(function () {
+            Route::get('/role-permission/{role?}', [RolePermissionController::class, 'index']);
+            Route::put('/role-permission/{role?}', [RolePermissionController::class, 'update']);
+        });
+
+        Route::middleware('permission:roles.manage')->group(function () {
+            Route::get('/user-permission/{user}', [RolePermissionController::class, 'showUserOverrides']);
+            Route::put('/user-permission/{user}', [RolePermissionController::class, 'updateUser']);
         });
     });
 });

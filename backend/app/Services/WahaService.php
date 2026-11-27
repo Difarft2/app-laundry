@@ -78,8 +78,11 @@ class WahaService
             })
             ->join("\n\n");
 
-        // Status pembayaran
-        $statusPembayaran = $order->pembayaran->where('status_pembayaran', 'lunas')->isNotEmpty() ? '*LUNAS*' : '*BELUM LUNAS*';
+        // Status pembayaran berdasarkan kalkulasi total berhasil vs total harga
+        $totalTerbayar = (float) $order->pembayaran->where('status_pembayaran', 'berhasil')->sum('jumlah_bayar');
+        $totalHarga = (float) $order->total_harga;
+        $isLunas = $totalHarga > 0 && $totalTerbayar >= $totalHarga;
+        $statusPembayaran = $isLunas ? '*LUNAS*' : ($totalTerbayar > 0 ? '*BELUM LUNAS (DP)*' : '*BELUM LUNAS*');
 
         $text = "*NOTA ELEKTRONIK*\n\n"
             .$setting->nama_app."\n"

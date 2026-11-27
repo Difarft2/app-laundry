@@ -91,4 +91,13 @@ export const othersItems: NavItem[] = [
     path: '/settings',
     permission: 'settings.manage',
   },
+  {
+    icon: GearIcon,
+    name: 'Manajemen Akses',
+    adminOnly: true,
+    subItems: [
+      { name: 'Role Permission', path: '/settings/role-permission' },
+      { name: 'User Permission', path: '/settings/user-permission' },
+    ],
+  },
 ]

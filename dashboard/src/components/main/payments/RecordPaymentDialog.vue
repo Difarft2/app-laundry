@@ -48,6 +48,7 @@ interface PaymentFormData {
   statusPembayaran: 'berhasil' | 'menunggu'
   tanggalPembayaran: string
   catatan: string
+  idempotencyKey: string
 }
 
 const defaultDateTime = (): string => {
@@ -68,6 +69,9 @@ const emptyForm = (): PaymentFormData => ({
   statusPembayaran: 'berhasil',
   tanggalPembayaran: defaultDateTime(),
   catatan: '',
+  // idempotencyKey akan di-generate saat form pertama kali digunakan,
+  // bukan setiap kali dialog dibuka (agar idempotency bekerja selama transaksi belum selesai)
+  idempotencyKey: crypto.randomUUID(),
 })
 
 const form = reactive<PaymentFormData>(emptyForm())
@@ -80,6 +84,10 @@ const fieldErrors = ref<Record<string, string>>({})
 const methods = ref<PaymentMethodOption[]>([])
 const methodsLoading = ref(false)
 const methodsError = ref<string | null>(null)
+
+const selectedMethod = computed(() =>
+  methods.value.find((m) => String(m.id) === form.idMetodePembayaran),
+)
 
 const sisaTagihan = computed(() => Math.max(0, Number(props.order?.sisa_pembayaran ?? 0)))
 
@@ -108,11 +116,14 @@ const localErrors = computed(() => {
   }
 
   const jumlah = Number(String(form.jumlahBayar).replace(',', '.'))
+  const isCash = selectedMethod.value?.kode === 'tunai'
+
   if (!String(form.jumlahBayar).trim() || Number.isNaN(jumlah) || jumlah <= 0) {
     errors.jumlahBayar = 'Jumlah bayar wajib lebih dari 0.'
-  } else if (jumlah > sisaTagihan.value) {
+  } else if (!isCash && jumlah > sisaTagihan.value) {
     errors.jumlahBayar = 'Jumlah bayar tidak boleh melebihi sisa tagihan.'
   } else if (
+    !isCash &&
     form.jenisPembayaran === 'pelunasan' &&
     Math.abs(jumlah - sisaTagihan.value) > 0.01
   ) {
@@ -159,7 +170,8 @@ watch(
   (open) => {
     if (!open) return
 
-    Object.assign(form, emptyForm())
+    // Reset form hanya untuk field yang bergantung pada sisa tagihan
+    // UUID idempotency key tetap bertahan selama transaksi belum selesai
     form.jumlahBayar = sisaTagihan.value > 0 ? String(sisaTagihan.value) : ''
     submitted.value = false
     touched.value = {}
@@ -193,6 +205,8 @@ const onSubmit = async (event?: Event) => {
       id_pesanan: props.order.id_pesanan,
       id_metode_pembayaran: Number(form.idMetodePembayaran),
       jumlah_bayar: Number(String(form.jumlahBayar).replace(',', '.')),
+      amount_received: Number(String(form.jumlahBayar).replace(',', '.')),
+      idempotency_key: form.idempotencyKey,
       jenis_pembayaran: form.jenisPembayaran,
       status_pembayaran: form.statusPembayaran,
       tanggal_pembayaran: toBackendDateTime(form.tanggalPembayaran),
@@ -204,6 +218,13 @@ const onSubmit = async (event?: Event) => {
   } catch (error) {
     const apiError = normalizeApiError(error)
 
+    // Handle 409 Conflict (idempotency key conflict with different payload)
+    if (apiError.status === 409) {
+      serverError.value = 'Transaksi sudah dicatat dengan data yang berbeda. Silakan muat ulang halaman dan coba lagi.'
+      submitting.value = false
+      return
+    }
+
     const mapping: Record<string, keyof PaymentFormData> = {
       id_metode_pembayaran: 'idMetodePembayaran',
       jumlah_bayar: 'jumlahBayar',
@@ -211,6 +232,7 @@ const onSubmit = async (event?: Event) => {
       status_pembayaran: 'statusPembayaran',
       tanggal_pembayaran: 'tanggalPembayaran',
       catatan: 'catatan',
+      idempotency_key: 'idempotencyKey',
     }
 
     const mappedErrors: Record<string, string> = {}
@@ -255,7 +277,7 @@ const onSubmit = async (event?: Event) => {
           class="min-w-0 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-white/3"
         >
           <p class="text-xs text-gray-500 dark:text-gray-400">Pesanan</p>
-          <p class="mt-0.5 break-words text-sm font-semibold text-gray-800 dark:text-white/90">
+          <p class="mt-0.5 wrap-break-word text-sm font-semibold text-gray-800 dark:text-white/90">
             {{ order.kode_pesanan }} · {{ order.pelanggan.nama }}
           </p>
           <div class="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs">

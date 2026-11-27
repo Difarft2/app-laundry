@@ -236,7 +236,7 @@ const options = computed<ApexOptions>(() => {
     </div>
 
     <div class="custom-scrollbar mt-4 max-w-full overflow-x-auto">
-      <div class="min-w-[640px]">
+      <div class="min-w-640">
         <VueApexCharts type="area" :height="320" :options="options" :series="series" />
       </div>
     </div>

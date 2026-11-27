@@ -7,5 +7,7 @@ declare module 'vue-router' {
     public?: boolean
     /** Permission backend yang dibutuhkan untuk membuka halaman. */
     permission?: string
+    /** Hanya role Admin yang boleh membuka halaman. */
+    adminOnly?: boolean
   }
 }

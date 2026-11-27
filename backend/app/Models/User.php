@@ -23,7 +23,27 @@ use Spatie\Permission\Traits\HasRoles;
 ])]
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles {
+        hasPermissionTo as protected spatieHasPermissionTo;
+    }
+
+    public function hasPermissionTo($permission, ?string $guardName = null): bool
+    {
+        $permissionName = $permission instanceof \Spatie\Permission\Contracts\Permission
+            ? $permission->name
+            : (string) $permission;
+
+        $override = \Illuminate\Support\Facades\DB::table('user_permission_overrides')
+            ->where('user_id', $this->getKey())
+            ->where('permission_name', $permissionName)
+            ->value('status');
+
+        return match ($override) {
+            'DENY' => false,
+            'GRANT' => true,
+            default => $this->spatieHasPermissionTo($permission, $guardName),
+        };
+    }
 
     protected function casts(): array
     {

@@ -7,11 +7,13 @@ use App\Http\Requests\Api\V1\Payment\StorePaymentRequest;
 use App\Http\Resources\Api\V1\PaymentResource;
 use App\Models\Pembayaran;
 use App\Models\Pesanan;
+use App\Models\MetodePembayaran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class PaymentController extends Controller
 {
@@ -86,16 +88,52 @@ class PaymentController extends Controller
     }
 
     /**
-     * Catat pembayaran lanjutan untuk pesanan yang dibayar nanti (DP/angsuran/pelunasan).
+     * Catat pembayaran lanjutan untuk pesanan (DP/angsuran/pelunasan).
      */
     public function store(StorePaymentRequest $request)
     {
         $validated = $request->validated();
 
-        $payment = DB::transaction(function () use ($validated) {
+        $idempotencyKey = $validated['idempotency_key'] ?? null;
+
+        if (!$idempotencyKey) {
+            throw ValidationException::withMessages([
+                'idempotency_key' => 'Idempotency key wajib diisi.',
+            ]);
+        }
+
+        $payloadHash = hash('sha256', json_encode($validated, JSON_THROW_ON_ERROR));
+
+        return DB::transaction(function () use ($validated, $idempotencyKey, $payloadHash) {
+            // Kunci pesanan untuk mencegah pembayaran bersamaan.
             $order = Pesanan::whereKey($validated['id_pesanan'])
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            // Pemeriksaan idempotency dilakukan setelah memperoleh lock.
+            $existing = Pembayaran::where('idempotency_key', $idempotencyKey)
+                ->where('id_pesanan', $validated['id_pesanan'])
+                ->first();
+
+            if ($existing) {
+                if (hash_equals((string) $existing->payload_hash, $payloadHash)) {
+                    $existing->load([
+                        'pesanan',
+                        'metodePembayaran',
+                        'user',
+                    ]);
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Pembayaran sudah dicatat.',
+                        'data' => new PaymentResource($existing),
+                    ], 200);
+                }
+
+                throw new ConflictHttpException(
+                    'Idempotency key sudah digunakan dengan payload berbeda.'
+                );
+            }
 
             if ($order->status_pesanan === 'dibatalkan') {
                 throw ValidationException::withMessages([
@@ -103,53 +141,79 @@ class PaymentController extends Controller
                 ]);
             }
 
+            // Hitung sisa tagihan hanya dari pembayaran berhasil.
             $terbayar = (float) $order->pembayaran()
                 ->where('status_pembayaran', 'berhasil')
-                ->sum('jumlah_bayar');
+                ->sum('amount_applied');
 
-            $sisa = round((float) $order->total_harga - $terbayar, 2);
-            $jumlah = round((float) $validated['jumlah_bayar'], 2);
+            $outstanding = round((float) $order->total_harga - $terbayar, 2);
 
-            if ($sisa <= 0) {
+            if ($outstanding <= 0) {
                 throw ValidationException::withMessages([
-                    'jumlah_bayar' => 'Tagihan pesanan ini sudah lunas.',
+                    'id_pesanan' => 'Tagihan pesanan ini sudah lunas.',
                 ]);
             }
 
-            if ($jumlah > $sisa) {
+            $amountReceived = (float) $validated['amount_received'];
+
+            $metode = MetodePembayaran::findOrFail(
+                $validated['id_metode_pembayaran']
+            );
+
+            $isCash = $metode->kode === 'tunai';
+
+            // Pastikan kedua variabel selalu terdefinisi.
+            $amountApplied = 0.0;
+            $changeAmount = 0.0;
+
+            if ($isCash) {
+                // Tunai: kelebihan pembayaran menjadi kembalian.
+                $amountApplied = min($amountReceived, $outstanding);
+                $changeAmount = max(0, $amountReceived - $amountApplied);
+            } else {
+                // Transfer/QRIS tidak menerima kelebihan pembayaran.
+                if ($amountReceived > $outstanding) {
+                    throw ValidationException::withMessages([
+                        'amount_received' => 'Jumlah uang diterima melebihi sisa tagihan.',
+                    ]);
+                }
+
+                $amountApplied = $amountReceived;
+            }
+
+            if ($amountApplied <= 0) {
                 throw ValidationException::withMessages([
-                    'jumlah_bayar' => "Jumlah bayar tidak boleh melebihi sisa tagihan (" . number_format($sisa, 2, ',', '.') . ").",
+                    'amount_received' => 'Nominal bayar tidak valid.',
                 ]);
             }
 
-            if ($validated['jenis_pembayaran'] === 'pelunasan' && abs($jumlah - $sisa) > 0.01) {
-                throw ValidationException::withMessages([
-                    'jumlah_bayar' => 'Pelunasan harus sama dengan sisa tagihan (' . number_format($sisa, 2, ',', '.') . ").",
-                ]);
-            }
-
-            return $order->pembayaran()->create([
+            $payment = $order->pembayaran()->create([
                 'id_metode_pembayaran' => $validated['id_metode_pembayaran'],
                 'id_user' => Auth::id(),
-                'kode_pembayaran' => 'PAY-' . now()->format('Ymd') . '-' . Str::upper(Str::random(6)),
-                'jumlah_bayar' => $validated['jumlah_bayar'],
+                'kode_pembayaran' => 'PAY-' . now()->format('Ymd') . '-' . Str::upper(Str::random(10)),
+                'jumlah_bayar' => $amountApplied,
+                'idempotency_key' => $idempotencyKey,
+                'amount_received' => $amountReceived,
+                'amount_applied' => $amountApplied,
+                'change_amount' => $changeAmount,
                 'jenis_pembayaran' => $validated['jenis_pembayaran'],
-                'status_pembayaran' => $validated['status_pembayaran'] ?? 'berhasil',
-                'tanggal_pembayaran' => $validated['tanggal_pembayaran'] ?? now(),
+                'status_pembayaran' => 'berhasil',
+                'tanggal_pembayaran' => now(),
                 'catatan' => $validated['catatan'] ?? null,
+                'payload_hash' => $payloadHash,
             ]);
-        });
 
-        $payment->load([
-            'pesanan',
-            'metodePembayaran',
-            'user',
-        ]);
+            $payment->load([
+                'pesanan',
+                'metodePembayaran',
+                'user',
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Pembayaran berhasil dicatat.',
-            'data' => new PaymentResource($payment),
-        ], 201);
+            return response()->json([
+                'success' => true,
+                'message' => 'Pembayaran berhasil dicatat.',
+                'data' => new PaymentResource($payment),
+            ], 201);
+        }, 3);
     }
 }

@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class RolePermissionTest extends TestCase
@@ -85,7 +87,7 @@ class RolePermissionTest extends TestCase
             'laundry.update',
             'delivery.assign',
             'delivery.update',
-            'roles.manage',
+            'delivery.verify',
         ];
 
         foreach ($writePermissions as $permission) {
@@ -95,8 +97,9 @@ class RolePermissionTest extends TestCase
             );
         }
 
-        // Admin adalah satu-satunya role yang dapat mengedit pengaturan global.
+        // Admin mengelola pengaturan global dan hak akses.
         $this->assertTrue($admin->hasPermissionTo('settings.manage'));
+        $this->assertTrue($admin->hasPermissionTo('roles.manage'));
     }
 
     public function test_owner_cannot_create_orders_or_manage_master_data(): void
@@ -115,6 +118,7 @@ class RolePermissionTest extends TestCase
             'payment-methods.update',
             'payment-methods.delete',
             'settings.manage',
+            'roles.manage',
         ];
 
         foreach ($forbiddenPermissions as $permission) {
@@ -172,6 +176,7 @@ class RolePermissionTest extends TestCase
         $this->assertFalse($karyawan->hasPermissionTo('reports.view'));
         $this->assertFalse($karyawan->hasPermissionTo('users.view'));
         $this->assertFalse($karyawan->hasPermissionTo('settings.manage'));
+        $this->assertFalse($karyawan->hasPermissionTo('roles.manage'));
     }
 
     public function test_kurir_only_has_delivery_access(): void
@@ -196,6 +201,7 @@ class RolePermissionTest extends TestCase
             'reports.view',
             'delivery.assign',
             'settings.manage',
+            'roles.manage',
         ];
 
         foreach ($forbiddenPermissions as $permission) {
@@ -204,6 +210,27 @@ class RolePermissionTest extends TestCase
                 "Kurir tidak boleh memiliki {$permission}."
             );
         }
+    }
+
+    public function test_permission_seeder_is_idempotent_and_preserves_each_role_access(): void
+    {
+        $this->seed(RolePermissionSeeder::class);
+        $permissionCount = Permission::count();
+        $roleCount = Role::count();
+        $this->seed(RolePermissionSeeder::class);
+
+        $this->assertSame($permissionCount, Permission::count());
+        $this->assertSame($roleCount, Role::count());
+
+        $admin = $this->userWithRole('admin');
+        $owner = $this->userWithRole('owner');
+        $karyawan = $this->userWithRole('karyawan');
+        $kurir = $this->userWithRole('kurir');
+
+        $this->assertFalse($admin->hasPermissionTo('delivery.verify'));
+        $this->assertTrue($karyawan->hasPermissionTo('service-times.create'));
+        $this->assertTrue($owner->hasPermissionTo('delivery.verify'));
+        $this->assertTrue($kurir->hasPermissionTo('delivery.update'));
     }
 
     public function test_admin_and_owner_are_forbidden_from_creating_orders_via_api(): void

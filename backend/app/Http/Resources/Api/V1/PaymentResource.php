@@ -37,6 +37,16 @@ class PaymentResource extends JsonResource
             'nama_user' => $this->whenLoaded('user', fn () => $this->user?->name),
 
             'jumlah_bayar' => (float) $this->jumlah_bayar,
+            'idempotency_key' => $this->idempotency_key,
+            'amount_received' => (float) $this->amount_received,
+            'amount_applied' => (float) $this->amount_applied,
+            'change_amount' => (float) $this->change_amount,
+            'sisa_tagihan' => $this->whenLoaded('pesanan', function () {
+                $terbayar = (float) $this->pesanan->pembayaran
+                    ->where('status_pembayaran', 'berhasil')
+                    ->sum('amount_applied');
+                return max(0, (float) $this->pesanan->total_harga - $terbayar);
+            }),
             'jenis_pembayaran' => $this->jenis_pembayaran,
             'status_pembayaran' => $this->status_pembayaran,
             'tanggal_pembayaran' => $this->tanggal_pembayaran,

@@ -24,7 +24,11 @@ const visibleItems = (items: NavItem[]) =>
         return false
       }
 
-      return !item.permission || auth.hasPermission(item.permission)
+      if (item.adminOnly && !auth.hasRole('admin')) {
+          return false
+        }
+
+        return !item.permission || auth.hasPermission(item.permission)
     })
     .map((item) =>
       isReadOnlyRole.value && item.readOnlyName ? { ...item, name: item.readOnlyName } : item,
