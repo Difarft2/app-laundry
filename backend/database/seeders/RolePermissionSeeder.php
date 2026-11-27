@@ -64,30 +64,53 @@ class RolePermissionSeeder extends Seeder
         ]);
 
         $admin->syncPermissions([
+            // Dashboard
             'dashboard.view',
+
+            // User Management
             'users.view',
+            'users.create',
             'users.update',
-            'users.approve',
+            'users.delete',
+
+            // Service Management
             'services.view',
             'services.create',
             'services.update',
             'services.delete',
+
+            // Service Time Management
             'service-times.view',
             'service-times.create',
             'service-times.update',
             'service-times.delete',
+
+            // Payment Method Management
             'payment-methods.view',
             'payment-methods.create',
             'payment-methods.update',
             'payment-methods.delete',
+
+            // Orders
             'orders.view',
+
+            // Payments
             'payments.view',
+
+            // Laundry
             'laundry.view',
+
+            // Delivery
             'delivery.view',
-            'delivery.verify',
+
+            // Reports & Finance
             'reports.view',
             'finance.view',
+            'finance.manage',
+
+            // Settings & Role Permission Management
             'settings.manage',
+            'roles.manage',
         ]);
 
         $owner = Role::firstOrCreate([
@@ -114,7 +137,6 @@ class RolePermissionSeeder extends Seeder
             'reports.view',
             'finance.view',
             'finance.manage',
-            'roles.manage',
         ]);
 
         $karyawan = Role::firstOrCreate([
@@ -125,8 +147,11 @@ class RolePermissionSeeder extends Seeder
         $karyawan->syncPermissions([
             'dashboard.view',
             'services.view',
+            'services.create',
             'service-times.view',
+            'service-times.create',
             'payment-methods.view',
+            'payment-methods.create',
             'orders.view',
             'orders.create',
             'orders.update',
