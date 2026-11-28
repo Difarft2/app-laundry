@@ -11,7 +11,8 @@ return new class extends Migration
         Schema::create('waktu_layanan', function (Blueprint $table) {
             $table->id('id_waktu_layanan');
             $table->string('nama_waktu', 100);
-            $table->unsignedSmallInteger('estimasi_hari');
+            $table->integer('estimasi_min_jam');
+            $table->integer('estimasi_max_jam');
             $table->text('deskripsi')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
