@@ -358,10 +358,34 @@ class OrderController extends Controller
 
             if ($caraBayar === 'now') {
                 $metode = MetodePembayaran::find($validated['id_metode_pembayaran']);
+                $isCash = $metode->kode === 'tunai';
+                $outstanding = (float) ($subtotal - $diskon);
+
+                // Hitung amount_received, amount_applied, change_amount
+                $amountReceived = (float) $validated['jumlah_bayar'];
+
+                if ($isCash) {
+                    // Tunai: kelebihan menjadi kembalian, tidak boleh melebihi tagihan
+                    $amountApplied = min($amountReceived, $outstanding);
+                    $changeAmount = max(0, $amountReceived - $amountApplied);
+                } else {
+                    // Transfer/QRIS: tidak menerima kelebihan pembayaran
+                    if ($amountReceived > $outstanding) {
+                        throw ValidationException::withMessages([
+                            'jumlah_bayar' => 'Jumlah bayar tidak boleh melebihi sisa tagihan.',
+                        ]);
+                    }
+                    $amountApplied = $amountReceived;
+                    $changeAmount = 0.0;
+                }
+
+                // Generate idempotency key for this transaction
+                $idempotencyKey = (string) Str::uuid();
+
                 $statusPembayaran = ($validated['status_pembayaran'] ?? 'pending') === 'berhasil'
                     ? 'berhasil'
                     : 'menunggu';
-                $jenisPembayaran = (float) $validated['jumlah_bayar'] >= (float) ($subtotal - $diskon)
+                $jenisPembayaran = (float) $validated['jumlah_bayar'] >= $outstanding
                     ? 'pelunasan'
                     : 'dp';
 
@@ -369,7 +393,11 @@ class OrderController extends Controller
                     'id_metode_pembayaran' => $validated['id_metode_pembayaran'],
                     'id_user' => Auth::id(),
                     'kode_pembayaran' => 'PAY-' . now()->format('Ymd') . '-' . Str::upper(Str::random(10)),
-                    'jumlah_bayar' => $validated['jumlah_bayar'],
+                    'jumlah_bayar' => $amountApplied,
+                    'idempotency_key' => $idempotencyKey,
+                    'amount_received' => $amountReceived,
+                    'amount_applied' => $amountApplied,
+                    'change_amount' => $changeAmount,
                     'jenis_pembayaran' => $jenisPembayaran,
                     'status_pembayaran' => $statusPembayaran,
                     'tanggal_pembayaran' => now(),

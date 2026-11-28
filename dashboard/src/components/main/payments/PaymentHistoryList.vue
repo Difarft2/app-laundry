@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Trash2Icon, LoaderCircleIcon } from '@/icons/layout'
 import { paymentStatusColor, paymentStatusLabel, paymentTypeLabel } from '@/constants/payments'
+import { paymentsApi } from '@/services/payments'
 import type { Payment } from '@/types/payment'
 import { formatCurrency } from '@/utils/format'
+import { ref } from 'vue'
 
 const props = withDefaults(
   defineProps<{
@@ -12,6 +16,29 @@ const props = withDefaults(
   }>(),
   { showOrder: false },
 )
+
+const isVerifying = ref<Record<number, boolean>>({})
+
+const canVerify = (payment: Payment): boolean => {
+  return payment.status_pembayaran === 'menunggu' &&
+    (payment.kode_metode === 'transfer' || payment.kode_metode === 'qris')
+}
+
+const handleVerify = async (payment: Payment) => {
+  if (!confirm(`Yakin mverifikasi pembayaran ${payment.kode_pembayaran}? Status akan berubah menjadi 'Berhasil'.`)) {
+    return
+  }
+
+  isVerifying.value[payment.id_pembayaran] = true
+  try {
+    await paymentsApi.verify(payment.id_pembayaran)
+    window.location.reload()
+  } catch (error) {
+    alert('Gagal memverifikasi pembayaran. Silakan coba lagi.')
+  } finally {
+    isVerifying.value[payment.id_pembayaran] = false
+  }
+}
 
 const formatDateTime = (iso: string | null): string => {
   if (!iso) return '—'
@@ -54,12 +81,15 @@ const formatDateTime = (iso: string | null): string => {
           <th class="px-5 py-3 text-start text-xs font-medium text-gray-500 lg:px-6 dark:text-gray-400">
             Dicatat oleh
           </th>
+          <th class="px-5 py-3 text-start text-xs font-medium text-gray-500 lg:px-6 dark:text-gray-400">
+            Tindakan
+          </th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
         <tr v-if="props.payments.length === 0">
           <td
-            :colspan="props.showOrder ? 7 : 6"
+            :colspan="props.showOrder ? 8 : 7"
             class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
           >
             Belum ada riwayat pembayaran.
@@ -106,6 +136,21 @@ const formatDateTime = (iso: string | null): string => {
           </td>
           <td class="px-5 py-4 text-sm text-gray-500 lg:px-6 dark:text-gray-400">
             {{ payment.nama_user ?? '—' }}
+          </td>
+          <td class="px-5 py-4 lg:px-6">
+            <Button
+              v-if="canVerify(payment)"
+              variant="outline"
+              size="sm"
+              :disabled="isVerifying[payment.id_pembayaran]"
+              @click="handleVerify(payment)"
+            >
+              <LoaderCircleIcon
+                v-if="isVerifying[payment.id_pembayaran]"
+                class="size-4 animate-spin"
+              />
+              <span v-else>Verifikasi</span>
+            </Button>
           </td>
         </tr>
       </tbody>

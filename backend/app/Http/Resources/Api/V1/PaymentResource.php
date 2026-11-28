@@ -44,7 +44,7 @@ class PaymentResource extends JsonResource
             'sisa_tagihan' => $this->whenLoaded('pesanan', function () {
                 $terbayar = (float) $this->pesanan->pembayaran
                     ->where('status_pembayaran', 'berhasil')
-                    ->sum('amount_applied');
+                    ->sum('jumlah_bayar');
                 return max(0, (float) $this->pesanan->total_harga - $terbayar);
             }),
             'jenis_pembayaran' => $this->jenis_pembayaran,

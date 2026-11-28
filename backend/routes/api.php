@@ -146,6 +146,9 @@ Route::prefix('v1')->group(function () {
 
             Route::post('/', [PaymentController::class, 'store'])
                 ->middleware('permission:payments.create');
+
+            Route::patch('/{payment}/verify', [PaymentController::class, 'verify'])
+                ->middleware('permission:payments.verify');
         });
 
         // Expense Management

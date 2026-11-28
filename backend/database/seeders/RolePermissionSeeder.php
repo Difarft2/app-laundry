@@ -34,6 +34,7 @@ class RolePermissionSeeder extends Seeder
             'orders.delete',
             'payments.view',
             'payments.create',
+            'payments.verify',
             'laundry.view',
             'laundry.update',
             'delivery.view',
@@ -96,6 +97,7 @@ class RolePermissionSeeder extends Seeder
 
             // Payments
             'payments.view',
+            'payments.verify',
 
             // Laundry
             'laundry.view',
@@ -131,6 +133,7 @@ class RolePermissionSeeder extends Seeder
             'orders.update-status',
             'orders.delete',
             'payments.view',
+            'payments.verify',
             'delivery.view',
             'delivery.assign',
             'delivery.verify',

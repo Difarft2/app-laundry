@@ -37,4 +37,9 @@ export const paymentsApi = {
     const { data } = await http.post<PaymentResponse>('/payments', dataToSend)
     return data.data
   },
+
+  async verify(id: number): Promise<Payment> {
+    const { data } = await http.patch<PaymentResponse>(`/payments/${id}/verify`)
+    return data.data
+  },
 }

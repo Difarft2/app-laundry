@@ -294,6 +294,20 @@ const onSubmit = async (event?: Event) => {
               </span>
             </span>
           </div>
+          <div class="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs">
+            <span class="text-gray-500 dark:text-gray-400">
+              Uang diterima:
+              <span class="font-medium text-gray-700 dark:text-gray-200">
+                {{ formatCurrency(Number(String(form.jumlahBayar).replace(',', '.')) || 0) }}
+              </span>
+            </span>
+            <span v-if="selectedMethod?.kode === 'tunai'" class="text-gray-500 dark:text-gray-400">
+              Kembalian:
+              <span class="font-semibold text-brand-600 dark:text-brand-400">
+                {{ formatCurrency(Number(String(form.jumlahBayar).replace(',', '.')) - sisaTagihan > 0 ? sisaTagihan : 0) }}
+              </span>
+            </span>
+          </div>
         </div>
 
         <div
