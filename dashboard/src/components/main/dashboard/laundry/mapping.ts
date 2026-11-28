@@ -47,13 +47,9 @@ const timeOnly = (value: string): string => {
 
 const orderStatusToLaundryStatus = (status: string): LaundryStatus => {
   switch (status) {
-    case 'dicuci':
-      return 'dicuci'
-    case 'dikeringkan':
-      return 'dikeringkan'
-    case 'dilipat':
-    case 'disetrika':
     case 'diproses':
+      return 'diproses'
+    case 'finishing':
     case 'siap_diambil':
       return 'finishing'
     case 'selesai':

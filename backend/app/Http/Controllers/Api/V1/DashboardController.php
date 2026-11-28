@@ -374,11 +374,8 @@ class DashboardController extends Controller
             ->with('detailPesanan')
             ->whereIn('status_pesanan', [
                 'menunggu',
-                'dicuci',
-                'dikeringkan',
-                'dilipat',
-                'disetrika',
                 'diproses',
+                'finishing',
                 'siap_diambil',
             ])
             ->latest('tanggal_masuk')

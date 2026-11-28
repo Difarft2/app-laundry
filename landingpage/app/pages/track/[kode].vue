@@ -54,16 +54,28 @@ const statusMap = {
     step: 1,
   },
   diproses: {
-    label: "Sedang Diproses",
-    description: "Pesanan sedang dikerjakan oleh tim laundry.",
+    label: "Diproses",
+    description: "Pesanan sedang dicuci dan dikeringkan oleh tim laundry.",
     color: "blue",
     step: 2,
   },
-  selesai: {
-    label: "Selesai",
-    description: "Pesanan sudah selesai dikerjakan.",
+  finishing: {
+    label: "Finishing",
+    description: "Pesanan sedang dilipat, disetrika, dan dirapikan.",
+    color: "amber",
+    step: 3,
+  },
+  siap_diambil: {
+    label: "Siap Diambil",
+    description: "Pesanan sudah selesai dikerjakan dan siap diambil atau diantar.",
     color: "green",
     step: 3,
+  },
+  selesai: {
+    label: "Selesai",
+    description: "Pesanan sudah selesai.",
+    color: "green",
+    step: 4,
   },
   dibatalkan: {
     label: "Dibatalkan",
@@ -109,6 +121,7 @@ const formatDate = (value, options = {}) => {
 const progressSteps = [
   { key: "menunggu", label: "Menunggu" },
   { key: "diproses", label: "Diproses" },
+  { key: "finishing", label: "Finishing" },
   { key: "selesai", label: "Selesai" },
 ];
 

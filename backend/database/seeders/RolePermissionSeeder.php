@@ -161,6 +161,7 @@ class RolePermissionSeeder extends Seeder
             'laundry.view',
             'laundry.update',
             'delivery.view',
+            'delivery.assign',
             'delivery.verify',
         ]);
 

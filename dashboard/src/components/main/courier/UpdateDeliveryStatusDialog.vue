@@ -10,14 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Field, FieldError, FieldLabel } from '@/components/ui/field'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
 import { deliveryStatusMeta } from '@/constants/delivery'
 import { deliveryApi } from '@/services/delivery'
@@ -50,19 +43,15 @@ const TRANSITIONS: Record<DeliveryStatus, DeliveryStatus[]> = {
   gagal: [],
 }
 
-const status = ref<DeliveryStatus | ''>('')
 const keterangan = ref('')
-const submitting = ref(false)
+const submitting = ref<DeliveryStatus | null>(null)
 const serverError = ref<string | null>(null)
-const statusError = ref<string | null>(null)
 
 const allowedStatuses = computed<DeliveryStatus[]>(() => {
   const task = props.task
   if (!task) return []
   return TRANSITIONS[task.status_antar_jemput].filter((next) => {
-    // Status `ditugaskan` membutuhkan kurir yang sudah ditetapkan.
     if (next === 'ditugaskan' && !task.kurir) return false
-    // Hanya tampilkan status yang sesuai jenis tugas.
     if (
       ['barang_diambil', 'menuju_laundry', 'pakaian_sampai_laundry'].includes(next)
       && task.jenis_antar_jemput !== 'penjemputan'
@@ -78,30 +67,21 @@ watch(
   () => props.open,
   (open) => {
     if (!open) return
-    status.value = ''
     keterangan.value = ''
-    submitting.value = false
+    submitting.value = null
     serverError.value = null
-    statusError.value = null
   },
   { immediate: true },
 )
 
-const onSubmit = async (event?: Event) => {
-  event?.preventDefault()
+const submit = async (next: DeliveryStatus) => {
+  if (!props.task || submitting.value) return
   serverError.value = null
-  statusError.value = null
-
-  if (!props.task || !status.value) {
-    statusError.value = 'Pilih status baru.'
-    return
-  }
-
-  submitting.value = true
+  submitting.value = next
 
   try {
     await deliveryApi.updateStatus(props.task.id_antar_jemput, {
-      status_antar_jemput: status.value,
+      status_antar_jemput: next,
       keterangan: keterangan.value.trim() || null,
     })
 
@@ -110,7 +90,7 @@ const onSubmit = async (event?: Event) => {
   } catch (error) {
     serverError.value = normalizeApiError(error).message
   } finally {
-    submitting.value = false
+    submitting.value = null
   }
 }
 </script>
@@ -130,7 +110,7 @@ const onSubmit = async (event?: Event) => {
         </DialogDescription>
       </DialogHeader>
 
-      <form class="space-y-5" novalidate @submit="onSubmit">
+      <div class="space-y-5">
         <div
           v-if="serverError"
           role="alert"
@@ -146,41 +126,44 @@ const onSubmit = async (event?: Event) => {
           Tugas ini sudah selesai dan tidak dapat diubah lagi.
         </p>
 
-        <Field v-else :data-invalid="Boolean(statusError)" class="gap-1.5">
-          <FieldLabel for="task-status">Status baru <span class="text-red-500">*</span></FieldLabel>
-          <Select v-model="status">
-            <SelectTrigger id="task-status" class="w-full" aria-label="Status baru">
-              <SelectValue placeholder="Pilih status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem v-for="next in allowedStatuses" :key="next" :value="next">
-                {{ deliveryStatusMeta[next].label }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <FieldError :errors="[{ message: statusError ?? undefined }]" />
-        </Field>
+        <template v-else>
+          <div class="flex flex-wrap gap-2">
+            <Button
+              v-for="next in allowedStatuses"
+              :key="next"
+              :variant="next === 'gagal' ? 'outline' : 'default'"
+              :class="next === 'gagal' ? 'border-error-300 text-error-600 hover:bg-error-50 dark:border-error-500/40 dark:text-error-400 dark:hover:bg-error-500/10' : ''"
+              :disabled="submitting !== null"
+              @click="submit(next)"
+            >
+              <span v-if="submitting === next" class="flex items-center gap-1.5">
+                <svg class="size-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                Menyimpan...
+              </span>
+              <span v-else>{{ deliveryStatusMeta[next].label }}</span>
+            </Button>
+          </div>
 
-        <Field class="gap-1.5">
-          <FieldLabel for="task-status-note">Keterangan</FieldLabel>
-          <Textarea
-            id="task-status-note"
-            v-model="keterangan"
-            rows="2"
-            placeholder="Opsional, dicatat pada riwayat"
-            :disabled="allowedStatuses.length === 0"
-          />
-        </Field>
+          <Field class="gap-1.5">
+            <FieldLabel for="task-status-note">Keterangan (opsional)</FieldLabel>
+            <Textarea
+              id="task-status-note"
+              v-model="keterangan"
+              rows="2"
+              placeholder="Dicatat pada riwayat"
+            />
+          </Field>
+        </template>
+      </div>
 
-        <DialogFooter class="mx-0 mb-0 gap-3 p-0 pt-2 sm:justify-end">
-          <DialogClose as-child>
-            <Button variant="outline" type="button" :disabled="submitting">Batal</Button>
-          </DialogClose>
-          <Button type="submit" :disabled="submitting || allowedStatuses.length === 0">
-            {{ submitting ? 'Menyimpan...' : 'Simpan status' }}
-          </Button>
-        </DialogFooter>
-      </form>
+      <DialogFooter class="mx-0 mb-0 p-0 pt-2 sm:justify-end">
+        <DialogClose as-child>
+          <Button variant="outline" type="button" :disabled="submitting !== null">Tutup</Button>
+        </DialogClose>
+      </DialogFooter>
     </DialogContent>
   </Dialog>
 </template>

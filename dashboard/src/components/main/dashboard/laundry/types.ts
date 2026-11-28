@@ -6,7 +6,7 @@ export type MetricTone = 'brand' | 'info' | 'success' | 'warning' | 'error' | 'g
 
 export type BadgeTone = 'primary' | 'success' | 'error' | 'warning' | 'info' | 'gray'
 
-export type LaundryStatus = 'menunggu' | 'dicuci' | 'dikeringkan' | 'finishing' | 'selesai' | 'dibatalkan'
+export type LaundryStatus = 'menunggu' | 'diproses' | 'finishing' | 'selesai' | 'dibatalkan'
 
 export type PaymentStatus = 'belum_dibayar' | 'belum_lunas' | 'lunas'
 

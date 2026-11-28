@@ -13,9 +13,8 @@ import type {
  * Colors are only for visualization; actual status values must come from the API.
  */
 export const laundryStatusMeta: Record<LaundryStatus, { label: string; color: BadgeTone }> = {
-  menunggu: { label: 'Menunggu giliran dicuci', color: 'gray' },
-  dicuci: { label: 'Dicuci', color: 'info' },
-  dikeringkan: { label: 'Dikeringkan', color: 'info' },
+  menunggu: { label: 'Menunggu giliran', color: 'gray' },
+  diproses: { label: 'Diproses', color: 'info' },
   finishing: { label: 'Finishing', color: 'warning' },
   selesai: { label: 'Pesanan selesai', color: 'success' },
   dibatalkan: { label: 'Dibatalkan', color: 'error' },
@@ -31,7 +30,7 @@ export const courierStatusMeta: Record<CourierTaskStatus, { label: string; color
   menunggu_verifikasi: { label: 'Menunggu verifikasi', color: 'warning' },
   menunggu: { label: 'Menunggu kurir', color: 'gray' },
   ditugaskan: { label: 'Diterima kurir', color: 'info' },
-  menuju_lokasi: { label: 'Menuju penjemputan', color: 'warning' },
+  menuju_lokasi: { label: 'Menuju lokasi', color: 'warning' },
   menuju_laundry: { label: 'Menuju laundry', color: 'info' },
   pakaian_sampai_laundry: { label: 'Sampai laundry', color: 'success' },
   barang_diambil: { label: 'Barang dijemput', color: 'info' },
