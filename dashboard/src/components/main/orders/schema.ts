@@ -3,8 +3,10 @@ export interface OrderFormData {
   noHp: string
   /** Nilai dari input datetime-local, mis. "2026-11-18T19:00". */
   tanggalMasuk: string
+  /** "nominal" = Rupiah langsung, "persen" = persentase dari subtotal. */
+  diskonTipe: 'nominal' | 'persen'
+  /** Nilai mentah sesuai diskonTipe. */
   diskon: string
-  catatan: string
   idLayanan: string
   jumlah: string
   catatanDetail: string
@@ -33,8 +35,8 @@ export const emptyOrderForm = (): OrderFormData => ({
   namaPelanggan: '',
   noHp: '',
   tanggalMasuk: nowLocalInput(),
+  diskonTipe: 'nominal',
   diskon: '0',
-  catatan: '',
   idLayanan: '',
   jumlah: '',
   catatanDetail: '',
@@ -80,6 +82,8 @@ export const validateOrderForm = (
   const diskon = Number(diskonRaw.replace(',', '.'))
   if (diskonRaw && (Number.isNaN(diskon) || diskon < 0)) {
     errors.diskon = 'Diskon tidak boleh kurang dari 0.'
+  } else if (data.diskonTipe === 'persen' && diskon > 100) {
+    errors.diskon = 'Diskon persentase maksimal 100%.'
   }
 
   if (data.caraBayar === 'now') {

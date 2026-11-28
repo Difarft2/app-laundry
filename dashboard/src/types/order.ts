@@ -3,11 +3,8 @@ import type { Payment } from './payment'
 
 export type OrderStatus =
   | 'menunggu'
-  | 'dicuci'
-  | 'dikeringkan'
-  | 'dilipat'
-  | 'disetrika'
   | 'diproses'
+  | 'finishing'
   | 'siap_diambil'
   | 'selesai'
   | 'dibatalkan'

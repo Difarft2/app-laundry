@@ -9,11 +9,8 @@ export interface OrderStatusOption {
 
 export const ORDER_STATUS_OPTIONS: OrderStatusOption[] = [
   { value: 'menunggu', label: 'Menunggu giliran', color: 'gray' },
-  { value: 'dicuci', label: 'Di cuci', color: 'info' },
-  { value: 'dikeringkan', label: 'Di keringkan', color: 'info' },
-  { value: 'dilipat', label: 'Di lipat', color: 'warning' },
-  { value: 'disetrika', label: 'Di setrika', color: 'warning' },
   { value: 'diproses', label: 'Diproses', color: 'info' },
+  { value: 'finishing', label: 'Finishing', color: 'warning' },
   { value: 'siap_diambil', label: 'Siap diambil', color: 'warning' },
   { value: 'selesai', label: 'Selesai', color: 'success' },
   { value: 'dibatalkan', label: 'Dibatalkan', color: 'error' },
@@ -25,10 +22,8 @@ export const ORDER_STATUS_OPTIONS: OrderStatusOption[] = [
  */
 export const LAUNDRY_STATUS_FLOW: OrderStatus[] = [
   'menunggu',
-  'dicuci',
-  'dikeringkan',
-  'dilipat',
-  'disetrika',
+  'diproses',
+  'finishing',
   'selesai',
 ]
 

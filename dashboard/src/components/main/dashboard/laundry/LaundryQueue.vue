@@ -18,15 +18,14 @@ const props = withDefaults(defineProps<LaundryQueueProps>(), {
   error: null,
 })
 
-const steps = ['Dicuci', 'Dikeringkan', 'Finishing', 'Selesai'] as const
+const steps = ['Diproses', 'Finishing', 'Selesai'] as const
 
 const stepIndex = (status: LaundryStatus): number => {
   const map: Record<LaundryStatus, number> = {
     menunggu: -1,
-    dicuci: 0,
-    dikeringkan: 1,
-    finishing: 2,
-    selesai: 3,
+    diproses: 0,
+    finishing: 1,
+    selesai: 2,
     dibatalkan: -1,
   }
   return map[status]

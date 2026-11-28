@@ -24,11 +24,8 @@ class OrderController extends Controller
     /** Status yang diizinkan, termasuk tahapan proses laundry dari scan QR. */
     private const ORDER_STATUSES = [
         'menunggu',
-        'dicuci',
-        'dikeringkan',
-        'dilipat',
-        'disetrika',
         'diproses',
+        'finishing',
         'siap_diambil',
         'selesai',
         'dibatalkan',

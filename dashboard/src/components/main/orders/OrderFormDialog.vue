@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
 import { formatEstimasi, serviceFinishingLabel, serviceTypeLabel } from '@/constants/services'
 import { fetchActivePaymentMethods, type PaymentMethodOption } from '@/services/dashboard'
 import { normalizeApiError } from '@/services/http'
@@ -56,6 +55,69 @@ const paymentMethodsError = ref<string | null>(null)
 
 const selectedService = computed<Service | null>(
   () => services.value.find((service) => String(service.id) === form.idLayanan) ?? null,
+)
+
+interface ServiceGroup {
+  key: string
+  nama: string
+  services: Service[]
+}
+
+const groupKeyOf = (service: Service): string => service.nama_layanan.trim().toLowerCase()
+
+const durationHours = (service: Service): number => {
+  const waktu = service.waktu_layanan
+  return Number(waktu?.estimasi_max_jam ?? waktu?.estimasi_min_jam ?? 0)
+}
+
+/** Layanan dengan nama sama digabung; pilihan jam menentukan id_layanan asli. */
+const serviceGroups = computed<ServiceGroup[]>(() => {
+  const groups = new Map<string, Service[]>()
+
+  for (const service of services.value) {
+    const key = groupKeyOf(service)
+    groups.set(key, [...(groups.get(key) ?? []), service])
+  }
+
+  return [...groups.entries()].map(([key, list]) => ({
+    key,
+    nama: list[0].nama_layanan,
+    services: [...list].sort((a, b) => durationHours(a) - durationHours(b) || Number(a.harga) - Number(b.harga)),
+  }))
+})
+
+const selectedGroupKey = ref('')
+const selectedGroup = computed<ServiceGroup | null>(
+  () => serviceGroups.value.find((group) => group.key === selectedGroupKey.value) ?? null,
+)
+
+const serviceUnit = (service: Service): string => (service.jenis_layanan === 'kiloan' ? 'kg' : 'item')
+
+const serviceTimeName = (service: Service): string => service.waktu_layanan?.nama_waktu ?? 'Tanpa estimasi'
+
+const onSelectGroup = (key: string) => {
+  selectedGroupKey.value = key
+  const group = serviceGroups.value.find((item) => item.key === key)
+  form.idLayanan = group && group.services.length === 1 ? String(group.services[0].id) : ''
+  clearServerError()
+}
+
+const layananError = computed(() => {
+  const server = fieldErrors.value[serverFieldKey('idLayanan')]
+  if (server) return server
+  if (!submitted.value && !touched.value.idLayanan) return undefined
+  if (!selectedGroupKey.value) return 'Layanan wajib dipilih.'
+  if (!form.idLayanan) return 'Estimasi waktu wajib dipilih.'
+  return undefined
+})
+
+watch(
+  () => form.idLayanan,
+  (value) => {
+    if (!value) return
+    const service = services.value.find((item) => String(item.id) === value)
+    if (service) selectedGroupKey.value = groupKeyOf(service)
+  },
 )
 
 const isSatuan = computed(() => selectedService.value?.jenis_layanan === 'satuan')
@@ -104,7 +166,7 @@ const serverFieldKey = (field: keyof OrderFormData): string => {
     noHp: 'no_hp',
     tanggalMasuk: 'tanggal_masuk',
     diskon: 'diskon',
-    catatan: 'catatan',
+    diskonTipe: 'diskon',
     idLayanan: 'detail_pesanan.0.id_layanan',
     jumlah: 'detail_pesanan.0.jumlah',
     catatanDetail: 'detail_pesanan.0.catatan',
@@ -125,12 +187,25 @@ const clearServerError = () => {
   fieldErrors.value = {}
 }
 
-const estimatedTotal = computed(() => {
+const subtotal = computed(() => {
   const service = selectedService.value
   if (!service) return null
   const jumlah = Number(String(form.jumlah).replace(',', '.')) || 0
-  const diskon = Number(String(form.diskon).replace(',', '.')) || 0
-  return Math.max(0, Number(service.harga) * jumlah - diskon)
+  return Number(service.harga) * jumlah
+})
+
+/** Nominal diskon akhir (Rupiah) yang dikirim ke backend. */
+const diskonNominal = computed(() => {
+  const raw = Number(String(form.diskon).replace(',', '.')) || 0
+  if (form.diskonTipe === 'persen') {
+    return Math.round(((subtotal.value ?? 0) * raw) / 100)
+  }
+  return raw
+})
+
+const estimatedTotal = computed(() => {
+  if (subtotal.value === null) return null
+  return Math.max(0, subtotal.value - diskonNominal.value)
 })
 
 const hoursToDays = (jam: number | null | undefined): number | null =>
@@ -194,11 +269,19 @@ const estimasiDurasiLabel = computed(() =>
 )
 
 watch(
+  () => estimatedTotal.value,
+  (total) => {
+    form.jumlahBayar = total === null ? '' : String(Math.max(0, total))
+  },
+)
+
+watch(
   () => props.open,
   (open) => {
     if (!open) return
 
     Object.assign(form, emptyOrderForm())
+    selectedGroupKey.value = ''
     submitted.value = false
     touched.value = {}
     serverError.value = null
@@ -220,9 +303,8 @@ const onSubmit = async (event?: Event) => {
   submitting.value = true
 
   try {
-    const catatan = form.catatan.trim()
     const catatanDetail = form.catatanDetail.trim()
-    const diskon = Number(String(form.diskon).replace(',', '.')) || 0
+    const diskon = diskonNominal.value
     const bayarSekarang = form.caraBayar === 'now'
 
     const payload: CreateOrderPayload = {
@@ -230,7 +312,6 @@ const onSubmit = async (event?: Event) => {
       no_hp: form.noHp.trim(),
       tanggal_masuk: toLocalDateTime(form.tanggalMasuk),
       diskon,
-      catatan: catatan ? catatan : null,
       detail_pesanan: [
         {
           id_layanan: Number(form.idLayanan),
@@ -257,7 +338,6 @@ const onSubmit = async (event?: Event) => {
       no_hp: 'noHp',
       tanggal_masuk: 'tanggalMasuk',
       diskon: 'diskon',
-      catatan: 'catatan',
       'detail_pesanan.0.id_layanan': 'idLayanan',
       'detail_pesanan.0.jumlah': 'jumlah',
       'detail_pesanan.0.catatan': 'catatanDetail',
@@ -341,32 +421,38 @@ const onSubmit = async (event?: Event) => {
         <fieldset class="space-y-4">
           <legend class="text-sm font-semibold text-gray-800 dark:text-white/90">Layanan</legend>
 
-          <Field :data-invalid="Boolean(errorOf('idLayanan'))" class="gap-1.5">
+          <Field :data-invalid="Boolean(layananError)" class="gap-1.5">
             <FieldLabel for="order-service">Layanan <span class="text-red-500">*</span></FieldLabel>
-            <Select v-model="form.idLayanan" :disabled="servicesLoading">
+            <Select
+              :model-value="selectedGroupKey"
+              :disabled="servicesLoading"
+              @update:model-value="onSelectGroup($event as string)"
+            >
               <SelectTrigger id="order-service" class="w-full" aria-label="Layanan">
                 <SelectValue :placeholder="servicesLoading ? 'Memuat layanan...' : 'Pilih layanan'" />
               </SelectTrigger>
               <SelectContent class="max-w-[calc(100vw-2rem)]">
                 <SelectItem
-                  v-for="service in services"
-                  :key="service.id"
-                  :value="String(service.id)"
+                  v-for="group in serviceGroups"
+                  :key="group.key"
+                  :value="group.key"
                   multiline
                 >
                   <span class="flex min-w-0 flex-col gap-0.5 text-start">
-                    <span class="wrap-break-word font-semibold">{{ service.nama_layanan }}</span>
+                    <span class="wrap-break-word font-semibold">{{ group.nama }}</span>
                     <span class="wrap-break-word text-xs font-normal text-gray-500 dark:text-gray-400">
-                      {{ formatCurrency(Number(service.harga)) }}/{{
-                        service.jenis_layanan === 'kiloan' ? 'kg' : 'item'
-                      }}
-                      · {{ estimasiLayananLabel(service) }}
+                      <template v-if="group.services.length > 1">
+                        {{ group.services.length }} pilihan waktu
+                      </template>
+                      <template v-else>
+                        {{ formatCurrency(Number(group.services[0].harga)) }}/{{ serviceUnit(group.services[0]) }}
+                        · {{ estimasiLayananLabel(group.services[0]) }}
+                      </template>
                     </span>
                   </span>
                 </SelectItem>
               </SelectContent>
             </Select>
-            <FieldError :errors="[{ message: errorOf('idLayanan') }]" />
             <p v-if="servicesError" class="text-xs text-error-500">
               {{ servicesError }}
               <button type="button" class="font-medium underline" @click="loadServices">Muat ulang</button>
@@ -378,6 +464,37 @@ const onSubmit = async (event?: Event) => {
               Belum ada layanan aktif. Tambahkan layanan terlebih dahulu.
             </p>
           </Field>
+
+          <Field v-if="selectedGroup" :data-invalid="Boolean(layananError)" class="gap-1.5">
+            <FieldLabel for="order-service-time">
+              Estimasi waktu <span class="text-red-500">*</span>
+            </FieldLabel>
+            <Select v-model="form.idLayanan">
+              <SelectTrigger id="order-service-time" class="w-full" aria-label="Estimasi waktu">
+                <SelectValue placeholder="Pilih estimasi waktu" />
+              </SelectTrigger>
+              <SelectContent class="max-w-[calc(100vw-2rem)]">
+                <SelectItem
+                  v-for="service in selectedGroup.services"
+                  :key="service.id"
+                  :value="String(service.id)"
+                  multiline
+                >
+                  <span class="flex min-w-0 flex-col gap-0.5 text-start">
+                    <span class="wrap-break-word font-semibold">
+                      {{ serviceTimeName(service) }} ·
+                      {{ formatEstimasi(service.waktu_layanan?.estimasi_min_jam, service.waktu_layanan?.estimasi_max_jam) }}
+                    </span>
+                    <span class="wrap-break-word text-xs font-normal text-gray-500 dark:text-gray-400">
+                      {{ formatCurrency(Number(service.harga)) }}/{{ serviceUnit(service) }}
+                    </span>
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <FieldError :errors="[{ message: layananError }]" />
+          </Field>
+          <FieldError v-else :errors="[{ message: layananError }]" />
 
           <div
             v-if="selectedService"
@@ -509,7 +626,7 @@ const onSubmit = async (event?: Event) => {
                     :key="method.id"
                     :value="String(method.id)"
                   >
-                    {{ method.nama_metode }} ({{ method.kode }})
+                    {{ method.nama_metode }}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -530,17 +647,15 @@ const onSubmit = async (event?: Event) => {
 
             <div class="grid gap-5 sm:grid-cols-2">
               <Field :data-invalid="Boolean(errorOf('jumlahBayar'))" class="gap-1.5">
-                <FieldLabel for="order-paid-amount">Jumlah bayar <span class="text-red-500">*</span></FieldLabel>
-                <Input
-                  id="order-paid-amount"
-                  v-model="form.jumlahBayar"
-                  type="text"
-                  inputmode="decimal"
-                  placeholder="0"
-                  :aria-invalid="errorOf('jumlahBayar') ? 'true' : undefined"
-                  @blur="touch('jumlahBayar')"
-                  @input="clearServerError"
-                />
+                <FieldLabel for="order-paid-amount">Jumlah bayar</FieldLabel>
+                <div class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 dark:border-gray-700 dark:bg-white/5">
+                  <p id="order-paid-amount" class="text-sm font-semibold text-gray-800 dark:text-white/90">
+                    {{ estimatedTotal === null ? '—' : formatCurrency(estimatedTotal) }}
+                  </p>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    Otomatis mengikuti total pesanan.
+                  </p>
+                </div>
                 <FieldError :errors="[{ message: errorOf('jumlahBayar') }]" />
               </Field>
 
@@ -570,16 +685,33 @@ const onSubmit = async (event?: Event) => {
 
           <div class="grid gap-5 sm:grid-cols-2">
             <Field :data-invalid="Boolean(errorOf('diskon'))" class="gap-1.5">
-              <FieldLabel for="order-discount">Diskon (Rp)</FieldLabel>
-              <Input
-                id="order-discount"
-                v-model="form.diskon"
-                type="text"
-                inputmode="decimal"
-                :aria-invalid="errorOf('diskon') ? 'true' : undefined"
-                @blur="touch('diskon')"
-                @input="clearServerError"
-              />
+              <FieldLabel for="order-discount">
+                Diskon {{ form.diskonTipe === 'persen' ? '(%)' : '(Rp)' }}
+              </FieldLabel>
+              <div class="flex gap-2">
+                <Select v-model="form.diskonTipe">
+                  <SelectTrigger class="w-24 shrink-0" aria-label="Tipe diskon">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nominal">Rp</SelectItem>
+                    <SelectItem value="persen">%</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  id="order-discount"
+                  v-model="form.diskon"
+                  type="text"
+                  inputmode="decimal"
+                  placeholder="0"
+                  :aria-invalid="errorOf('diskon') ? 'true' : undefined"
+                  @blur="touch('diskon')"
+                  @input="clearServerError"
+                />
+              </div>
+              <p v-if="form.diskonTipe === 'persen' && diskonNominal > 0" class="text-xs text-gray-500 dark:text-gray-400">
+                Setara {{ formatCurrency(diskonNominal) }}
+              </p>
               <FieldError :errors="[{ message: errorOf('diskon') }]" />
             </Field>
 
@@ -613,18 +745,6 @@ const onSubmit = async (event?: Event) => {
               </p>
             </div>
           </div>
-
-          <Field :data-invalid="Boolean(errorOf('catatan'))" class="gap-1.5">
-            <FieldLabel for="order-note">Catatan pesanan</FieldLabel>
-            <Textarea
-              id="order-note"
-              v-model="form.catatan"
-              rows="2"
-              placeholder="Opsional"
-              @input="clearServerError"
-            />
-            <FieldError :errors="[{ message: errorOf('catatan') }]" />
-          </Field>
         </fieldset>
 
         <DialogFooter class="mx-0 mb-0 gap-3 p-0 pt-2 sm:justify-end">

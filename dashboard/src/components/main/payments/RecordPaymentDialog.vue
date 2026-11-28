@@ -318,7 +318,7 @@ const onSubmit = async (event?: Event) => {
                 :key="method.id"
                 :value="String(method.id)"
               >
-                {{ method.nama_metode }} ({{ method.kode }})
+                {{ method.nama_metode }}
               </SelectItem>
             </SelectContent>
           </Select>

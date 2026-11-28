@@ -442,49 +442,42 @@ onBeforeUnmount(() => {
                     </td>
 
                     <td class="px-5 py-4 text-end lg:px-6">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger as-child>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            class="text-gray-500 dark:text-gray-400"
-                            :aria-label="`Aksi untuk ${customerName(task)}`"
-                          >
-                            <HorizontalDotsIcon class="size-5" />
-                          </Button>
-                        </DropdownMenuTrigger>
+                      <div class="flex flex-col items-end gap-2">
+                        <Button
+                          v-if="canAssign && ['menunggu', 'ditugaskan'].includes(task.status_antar_jemput)"
+                          variant="default"
+                          size="sm"
+                          class="w-40 justify-center"
+                          @click="openAssign(task)"
+                        >
+                          {{ task.kurir ? 'Ganti kurir' : 'Tugaskan kurir' }}
+                        </Button>
 
-                        <DropdownMenuContent align="end" class="w-52">
-                          <DropdownMenuItem :to="`/pickup-delivery/${task.id_antar_jemput}`">
-                            <ArrowRightIcon class="size-5" />
+                        <Button
+                          v-if="canAccept && task.status_antar_jemput === 'menunggu' && (!task.kurir || isAssignedToMe(task))"
+                          size="sm"
+                          class="w-40 justify-center"
+                          @click="acceptTask(task)"
+                        >
+                          <CheckIcon class="size-4" />
+                          Terima tugas
+                        </Button>
+
+                        <Button
+                          v-if="canUpdateStatus && isAssignedToMe(task) && !['selesai', 'gagal'].includes(task.status_antar_jemput)"
+                          size="sm"
+                          class="w-40 justify-center"
+                          @click="openStatus(task)"
+                        >
+                          Perbarui status
+                        </Button>
+
+                        <Button variant="outline" size="sm" class="w-40 justify-center" as-child>
+                          <RouterLink :to="`/pickup-delivery/${task.id_antar_jemput}`">
                             Lihat detail
-                          </DropdownMenuItem>
-
-                          <DropdownMenuItem
-                            v-if="canAssign && ['menunggu', 'ditugaskan'].includes(task.status_antar_jemput)"
-                            @select="openAssign(task)"
-                          >
-                            <PencilIcon class="size-5" />
-                            {{ task.kurir ? 'Ganti kurir' : 'Tugaskan kurir' }}
-                          </DropdownMenuItem>
-
-                          <DropdownMenuItem
-                            v-if="canAccept && task.status_antar_jemput === 'menunggu' && (!task.kurir || isAssignedToMe(task))"
-                            @select="acceptTask(task)"
-                          >
-                            <CheckIcon class="size-5" />
-                            Terima tugas
-                          </DropdownMenuItem>
-
-                          <DropdownMenuItem
-                            v-if="canUpdateStatus && isAssignedToMe(task)"
-                            @select="openStatus(task)"
-                          >
-                            <PencilIcon class="size-5" />
-                            Perbarui status
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                          </RouterLink>
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 </template>
